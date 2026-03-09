@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>身体ポートフォリオ診断シート | France Direct</title>
+<title>コア・アセット現状分析 | France Direct</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
@@ -22,10 +22,20 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 
 .container { max-width: 740px; margin: 0 auto; padding: 20px 14px 80px; }
 
-/* Progress bar */
+.progress-label { font-size: 10px; color: var(--text-muted); text-align: right; margin-bottom: 6px; letter-spacing: 0.05em; }
 .progress-bar { height: 2px; background: rgba(180,150,80,0.15); margin-bottom: 20px; }
 .progress-fill { height: 100%; background: var(--gold); transition: width 0.4s ease; }
-.progress-label { font-size: 10px; color: var(--text-muted); text-align: right; margin-bottom: 6px; letter-spacing: 0.05em; }
+
+/* Intro banner */
+.intro-banner {
+  background: rgba(180,150,80,0.06);
+  border: 1px solid rgba(180,150,80,0.25);
+  border-left: 3px solid var(--gold);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.intro-banner p { font-size: 11.5px; color: var(--text-muted); line-height: 1.9; }
+.intro-banner strong { color: var(--text); font-weight: 700; }
 
 .card { background: var(--dark3); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; }
 .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
@@ -73,23 +83,46 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .ft-area { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; font-size: 12px; font-family: inherit; resize: vertical; min-height: 80px; line-height: 1.7; }
 .ft-area:focus { outline: none; border-color: var(--gold); }
 
-/* validation alert */
 .val-alert { background: rgba(208,72,72,0.1); border: 1px solid rgba(208,72,72,0.4); color: var(--red); font-size: 11px; padding: 10px 14px; margin-bottom: 12px; display: none; line-height: 1.6; }
 
 .analyze-btn { width: 100%; background: var(--gold); color: var(--dark); border: none; padding: 18px; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; font-family: inherit; margin-top: 10px; transition: background 0.2s; }
 .analyze-btn:hover { background: var(--gold-light); }
-.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ===== RESULTS ===== */
 #results { display: none; }
 
-.send-banner { background: rgba(74,170,112,0.12); border: 1px solid rgba(74,170,112,0.4); color: var(--green); font-size: 12px; font-weight: 700; padding: 12px 18px; text-align: center; margin-bottom: 16px; letter-spacing: 0.04em; }
-.send-banner.err { background: rgba(208,72,72,0.1); border-color: rgba(208,72,72,0.4); color: var(--red); }
-.send-banner.sending { background: rgba(180,150,80,0.08); border-color: var(--border); color: var(--text-muted); }
+.send-banner { font-size: 11px; font-weight: 700; padding: 11px 18px; text-align: center; margin-bottom: 16px; }
+.send-banner.sending { background: rgba(180,150,80,0.08); border: 1px solid var(--border); color: var(--text-muted); }
+.send-banner.ok  { background: rgba(74,170,112,0.1); border: 1px solid rgba(74,170,112,0.4); color: var(--green); }
+.send-banner.err { background: rgba(208,72,72,0.1); border: 1px solid rgba(208,72,72,0.4); color: var(--red); }
 
-.results-top { display: flex; justify-content: space-between; align-items: flex-end; padding: 14px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.results-top { display: flex; justify-content: space-between; align-items: flex-end; padding: 14px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
 .results-name { font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; }
 .results-meta { font-size: 10px; color: var(--text-muted); text-align: right; line-height: 1.9; }
+
+/* Asset status card */
+.asset-status {
+  background: var(--dark3);
+  border: 1px solid var(--border);
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.asset-status-left { flex: 1; min-width: 180px; }
+.asset-status-label { font-size: 9px; color: var(--gold); letter-spacing: 0.2em; font-weight: 700; margin-bottom: 8px; }
+.asset-status-title { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.4; }
+.asset-status-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.7; }
+.asset-score-circle {
+  width: 90px; height: 90px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 3px solid;
+  flex-shrink: 0;
+}
+.asc-val { font-size: 28px; font-weight: 700; line-height: 1; }
+.asc-lbl { font-size: 9px; margin-top: 2px; letter-spacing: 0.06em; }
 
 .chart-card { background: var(--dark3); border: 1px solid var(--border); padding: 20px; margin-bottom: 14px; }
 .chart-card-title { font-size: 10px; color: var(--gold); letter-spacing: 0.18em; font-weight: 700; text-align: center; margin-bottom: 16px; }
@@ -113,6 +146,52 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .alert-item { display: flex; gap: 8px; margin-bottom: 7px; font-size: 11px; color: var(--text); line-height: 1.5; align-items: flex-start; }
 .alert-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
 
+/* Bottleneck open loop card */
+.bottleneck-card {
+  background: var(--dark3);
+  border: 1px solid rgba(180,150,80,0.4);
+  padding: 22px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.bottleneck-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+.bottleneck-tag { font-size: 9px; color: var(--gold); letter-spacing: 0.2em; font-weight: 700; margin-bottom: 10px; }
+.bottleneck-title { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; margin-bottom: 12px; }
+.bottleneck-title span { color: var(--gold); }
+.bottleneck-body { font-size: 12px; color: var(--text-muted); line-height: 1.9; margin-bottom: 16px; }
+.bottleneck-blur {
+  background: rgba(180,150,80,0.06);
+  border: 1px dashed rgba(180,150,80,0.3);
+  padding: 14px 16px;
+  border-radius: 2px;
+  position: relative;
+}
+.bottleneck-blur-title { font-size: 10px; color: var(--gold); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.08em; }
+.bottleneck-blur-text { font-size: 12px; color: rgba(221,226,240,0.35); line-height: 1.8; filter: blur(3px); user-select: none; }
+.bottleneck-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; }
+.bottleneck-lock-icon { font-size: 20px; }
+.bottleneck-lock-text { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; }
+
+/* CTA card */
+.cta-card {
+  background: var(--gold);
+  padding: 24px 22px;
+  margin-bottom: 14px;
+}
+.cta-card-tag { font-size: 9px; color: rgba(10,10,20,0.6); letter-spacing: 0.2em; font-weight: 700; margin-bottom: 8px; }
+.cta-card-title { font-size: 17px; font-weight: 700; color: var(--dark); line-height: 1.4; margin-bottom: 10px; }
+.cta-card-body { font-size: 11px; color: rgba(10,10,20,0.7); line-height: 1.85; }
+.cta-card-items { margin-top: 12px; }
+.cta-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 7px; font-size: 11px; color: rgba(10,10,20,0.75); line-height: 1.5; }
+.cta-item-num { font-size: 9px; font-weight: 700; color: var(--dark); background: rgba(10,10,20,0.15); padding: 1px 6px; flex-shrink: 0; margin-top: 1px; }
+
 .coach-card { background: var(--dark3); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; }
 .coach-card-title { font-size: 9px; color: var(--gold); letter-spacing: 0.2em; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
 .coach-block { margin-bottom: 14px; }
@@ -129,32 +208,31 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .ft-display-a { font-size: 12px; color: var(--text); line-height: 1.8; background: rgba(255,255,255,0.025); padding: 8px 12px; border-left: 2px solid var(--gold); min-height: 36px; white-space: pre-wrap; }
 
 .action-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-.btn-primary { flex: 1; min-width: 160px; background: var(--gold); color: var(--dark); border: none; padding: 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; }
-.btn-primary:hover { background: var(--gold-light); }
-.btn-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 14px 18px; font-size: 11px; cursor: pointer; font-family: inherit; }
-.btn-secondary:hover { color: var(--text); border-color: var(--text-muted); }
+.btn-primary { flex: 1; min-width: 160px; background: var(--dark3); color: var(--text-muted); border: 1px solid var(--border); padding: 13px; font-size: 11px; cursor: pointer; font-family: inherit; letter-spacing: 0.05em; }
+.btn-primary:hover { border-color: var(--text-muted); color: var(--text); }
+.btn-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 13px 18px; font-size: 11px; cursor: pointer; font-family: inherit; }
+.btn-secondary:hover { color: var(--text); }
 
 @media print {
   body { background: #fff !important; color: #000 !important; }
   .app-header { position: static; background: #fff; border-bottom: 1px solid #ccc; }
   .app-header h1 { color: #333 !important; }
-  .app-header p { color: #666 !important; }
-  #survey, .action-row, .send-banner, .progress-bar, .progress-label { display: none !important; }
+  #survey, .action-row, .send-banner, .progress-bar, .progress-label, .cta-card { display: none !important; }
   #results { display: block !important; }
-  .card, .chart-card, .sc-card, .coach-card, .info-card, .alert-card { background: #fff !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .card, .chart-card, .sc-card, .coach-card, .info-card, .alert-card, .asset-status, .bottleneck-card { background: #fff !important; border: 1px solid #ddd !important; break-inside: avoid; }
   .sc-bar-bg { background: #eee !important; }
   .coach-block-text, .ft-display-a { background: #f8f8f8 !important; color: #000 !important; }
-  .sc-label, .results-name { color: #000 !important; }
-  .chart-card-title, .coach-card-title, .info-title, .alert-card-title { color: #333 !important; }
-  .results-meta, .sc-level { color: #666 !important; }
+  .results-name { color: #333 !important; }
+  .bottleneck-blur-text { filter: none !important; color: #333 !important; }
+  .bottleneck-lock { display: none !important; }
 }
 </style>
 </head>
 <body>
 
 <header class="app-header">
-  <h1>身体ポートフォリオ診断シート</h1>
-  <p>判断精度と生体資本の現在地可視化　|　France Direct</p>
+  <h1>コア・アセット現状分析</h1>
+  <p>自分という資産の現在地可視化　|　France Direct</p>
 </header>
 
 <div class="container">
@@ -162,7 +240,13 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 <!-- ======================== SURVEY ======================== -->
 <div id="survey">
 
-  <!-- 基本情報 -->
+  <div class="intro-banner">
+    <p>この分析は、<strong>健康診断ではありません。</strong><br>
+    あなた自身という「コア・アセット」が今どういう状態にあるか。<br>
+    本来持っているパフォーマンスを100%発揮するために、<strong>どこに投資（ケア）をすべきか</strong>を整理するための、パーソナル・セッションです。<br>
+    直感で、今の感覚のままお答えください。</p>
+  </div>
+
   <div class="card">
     <div class="card-header">
       <div class="card-tag">PROFILE</div>
@@ -184,35 +268,45 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
         <input class="text-input" type="email" id="clientEmail" placeholder="例：yamada@example.com">
       </div>
       <div class="field-group">
-        <label class="field-label">ご職業（任意）</label>
-        <input class="text-input" type="text" id="clientJob" placeholder="例：投資家、経営者">
+        <label class="field-label">性別（任意）</label>
+        <select class="text-input" id="clientJob">
+          <option value="">選択してください</option>
+          <option value="男性">男性</option>
+          <option value="女性">女性</option>
+          <option value="回答しない">回答しない</option>
+        </select>
       </div>
     </div>
   </div>
 
-  <!-- FOCUS -->
   <div class="card">
     <div class="card-header">
       <div class="card-tag">FOCUS</div>
       <div>
-        <div class="card-title">今日特に知りたいことは？</div>
+        <div class="card-title">今日この面談で確認したいこと</div>
         <div class="card-sub">複数選択可</div>
       </div>
     </div>
     <div class="check-list">
-      <div class="check-item"><input type="checkbox" id="f1" value="判断精度を下げている要因"><label for="f1">判断精度を下げている要因</label></div>
-      <div class="check-item"><input type="checkbox" id="f2" value="身体の負担が出やすい場所"><label for="f2">身体の負担が出やすい場所</label></div>
-      <div class="check-item"><input type="checkbox" id="f3" value="今は攻める時期か整える時期か"><label for="f3">攻める時期か整える時期か</label></div>
-      <div class="check-item"><input type="checkbox" id="f4" value="ハーブファスティングの必要性"><label for="f4">ハーブファスティングの必要性</label></div>
-      <div class="check-item"><input type="checkbox" id="f5" value="今後のバイオリズム"><label for="f5">今後のバイオリズム</label></div>
-      <div class="check-item"><input type="checkbox" id="f6" value="健康と資産形成のバランス"><label for="f6">健康と資産形成のバランス</label></div>
+      <div class="check-item"><input type="checkbox" id="f1" value="判断精度・意思決定の質が落ちている気がする"><label for="f1">判断精度・意思決定の質が落ちている気がする</label></div>
+      <div class="check-item"><input type="checkbox" id="f2" value="身体のどこに負荷がかかっているか知りたい"><label for="f2">身体のどこに負荷がかかっているか知りたい</label></div>
+      <div class="check-item"><input type="checkbox" id="f3" value="今は攻める時期か、整える時期かを知りたい"><label for="f3">今は攻める時期か、整える時期か知りたい</label></div>
+      <div class="check-item"><input type="checkbox" id="f4" value="ハーブファスティングで何が変わるか知りたい"><label for="f4">ハーブファスティングで何が変わるか知りたい</label></div>
+      <div class="check-item"><input type="checkbox" id="f5" value="今後のバイオリズム・波の読み方を知りたい"><label for="f5">今後のバイオリズム・波の読み方を知りたい</label></div>
+      <div class="check-item"><input type="checkbox" id="f6" value="本来の自分のパフォーマンスを取り戻したい"><label for="f6">本来の自分のパフォーマンスを取り戻したい</label></div>
       <div class="check-item"><input type="checkbox" id="f7" value="その他"><label for="f7">その他</label></div>
     </div>
   </div>
 
   <!-- SECTION 1 -->
   <div class="card">
-    <div class="card-header"><div class="card-tag">SECTION 1</div><div class="card-title">今のパフォーマンス状態</div></div>
+    <div class="card-header">
+      <div class="card-tag">SECTION 1</div>
+      <div>
+        <div class="card-title">ハードウェアの基盤状態</div>
+        <div class="card-sub">身体という「ハードウェア」の出力レベルを測定します</div>
+      </div>
+    </div>
     <div class="scale-header-row">
       <div class="spacer"></div>
       <div class="scale-labels">
@@ -227,7 +321,13 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 
   <!-- SECTION 2 -->
   <div class="card">
-    <div class="card-header"><div class="card-tag">SECTION 2</div><div class="card-title">判断精度の乱れ</div></div>
+    <div class="card-header">
+      <div class="card-tag">SECTION 2</div>
+      <div>
+        <div class="card-title">意思決定・判断精度の乱れ</div>
+        <div class="card-sub">投資・経営判断の「処理精度」に直結するゾーン</div>
+      </div>
+    </div>
     <div class="scale-header-row">
       <div class="spacer"></div>
       <div class="scale-labels">
@@ -240,7 +340,13 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 
   <!-- SECTION 3 -->
   <div class="card">
-    <div class="card-header"><div class="card-tag">SECTION 3</div><div class="card-title">体の負担サイン</div></div>
+    <div class="card-header">
+      <div class="card-tag">SECTION 3</div>
+      <div>
+        <div class="card-title">内臓・自律神経の負荷サイン</div>
+        <div class="card-sub">脳のパフォーマンスを裏から支える「冷却装置」の状態</div>
+      </div>
+    </div>
     <div class="scale-header-row">
       <div class="spacer"></div>
       <div class="scale-labels">
@@ -253,7 +359,13 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 
   <!-- SECTION 4 -->
   <div class="card">
-    <div class="card-header"><div class="card-tag">SECTION 4</div><div class="card-title">今のタイミング感</div></div>
+    <div class="card-header">
+      <div class="card-tag">SECTION 4</div>
+      <div>
+        <div class="card-title">バイオリズム・波の同期状態</div>
+        <div class="card-sub">今の自分の「流れ」との同期度を測定します</div>
+      </div>
+    </div>
     <div class="scale-header-row">
       <div class="spacer"></div>
       <div class="scale-labels">
@@ -269,12 +381,12 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
     <div class="card-header"><div class="card-tag">FREE</div><div class="card-title">自由記述</div></div>
     <div class="ft-label">今、仕事・投資・人生全体で一番整えたいことは何ですか？</div>
     <textarea class="ft-area" id="ft1" placeholder="自由にご記入ください"></textarea>
-    <div class="ft-label">半年後、「この面談を受けてよかった」と思える状態はどんな状態ですか？</div>
+    <div class="ft-label">「本来の自分」が100%出せている状態とは、どんな状態ですか？</div>
     <textarea class="ft-area" id="ft2" placeholder="自由にご記入ください"></textarea>
   </div>
 
   <div class="val-alert" id="valAlert"></div>
-  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">診断結果を見る →</button>
+  <button class="analyze-btn" onclick="analyze()">現状分析を見る →</button>
 
 </div><!-- /survey -->
 
@@ -282,32 +394,65 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 <!-- ======================== RESULTS ======================== -->
 <div id="results">
 
-  <div id="sendBanner" class="send-banner sending">データを送信中...</div>
+  <div id="sendBanner" class="send-banner sending" style="display:none;">データを送信中...</div>
 
   <div class="results-top">
     <div><div id="res-name" class="results-name"></div></div>
     <div id="res-meta" class="results-meta"></div>
   </div>
 
+  <!-- Asset status overview -->
+  <div class="asset-status" id="assetStatus">
+    <div class="asset-status-left">
+      <div class="asset-status-label">CORE ASSET STATUS</div>
+      <div class="asset-status-title" id="assetTitle"></div>
+      <div class="asset-status-sub" id="assetSub"></div>
+    </div>
+    <div class="asset-score-circle" id="assetCircle">
+      <div class="asc-val" id="assetScoreVal"></div>
+      <div class="asc-lbl" id="assetScoreLbl"></div>
+    </div>
+  </div>
+
+  <!-- Radar -->
   <div class="chart-card">
-    <div class="chart-card-title">身体ポートフォリオ　レーダーチャート</div>
+    <div class="chart-card-title">コア・アセット　レーダー分析</div>
     <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
   </div>
 
+  <!-- Score grid -->
   <div class="score-grid" id="scoreGrid"></div>
 
+  <!-- High alert -->
   <div class="alert-card" id="alertCard" style="display:none;">
-    <div class="alert-card-title">HIGH ALERT — スコア4以上の項目</div>
+    <div class="alert-card-title">CRITICAL SIGNAL — 即時対処が必要な項目</div>
     <div id="alertList"></div>
   </div>
 
+  <!-- Bottleneck open loop -->
+  <div class="bottleneck-card" id="bottleneckCard">
+    <div class="bottleneck-tag">BOTTLENECK ANALYSIS</div>
+    <div class="bottleneck-title" id="bottleneckTitle"></div>
+    <div class="bottleneck-body" id="bottleneckBody"></div>
+    <div class="bottleneck-blur">
+      <div class="bottleneck-blur-title">ボトルネックの正体 ／ 処方箋</div>
+      <div class="bottleneck-blur-text" id="bottleneckBlurText"></div>
+      <div class="bottleneck-lock">
+        <div class="bottleneck-lock-icon">🔒</div>
+        <div class="bottleneck-lock-text">第二回セッションで解析・開示</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Coach note (非印刷向けはprint CSSで制御) -->
   <div class="coach-card">
-    <div class="coach-card-title">COACH NOTE — 読み取りガイド</div>
+    <div class="coach-card-title">COACH NOTE — アドバイザー用読み取りガイド</div>
     <div id="coachContent"></div>
   </div>
 
   <div class="info-card" id="focusCard" style="display:none;">
-    <div class="info-title">TODAY'S FOCUS — 本日特に知りたいこと</div>
+    <div class="info-title">TODAY'S FOCUS — 本日確認したいこと</div>
     <div class="tag-row" id="focusTags"></div>
   </div>
 
@@ -329,33 +474,37 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 // ===================================================
 // SUPABASE
 // ===================================================
-const SUPABASE_URL  = 'https://fnzimwshyctxkxyzfkpv.supabase.co';
-const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuemltd3NoeWN0eGt4eXpma3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0OTEsImV4cCI6MjA4ODU0NzQ5MX0.Yt1DjKFA8L7IlG8ap-cr0Cv3D2TlBKesu3SNnSjB_UU';
+const SUPABASE_URL = 'https://fnzimwshyctxkxyzfkpv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuemltd3NoeWN0eGt4eXpma3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0OTEsImV4cCI6MjA4ODU0NzQ5MX0.Yt1DjKFA8L7IlG8ap-cr0Cv3D2TlBKesu3SNnSjB_UU';
 let db = null;
-try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn('Supabase init error:', e); }
+try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn('Supabase:', e); }
 
 // ===================================================
-// QUESTIONS
+// QUESTIONS — スクリプトの言語に統一
 // ===================================================
 const questions = [
-  { id:1,  s:1, text:'朝起きた時点で、すでに疲れが残っている感じがある' },
-  { id:2,  s:1, text:'食後に眠気や頭の重さが出やすい' },
-  { id:3,  s:1, text:'夕方以降、思考のキレが落ちやすい' },
-  { id:4,  s:1, text:'忙しい時ほど、集中力が続きにくい' },
-  { id:5,  s:1, text:'以前に比べて、回復に時間がかかるようになった' },
-  { id:6,  s:2, text:'最近、決断に時間がかかることが増えた' },
-  { id:7,  s:2, text:'本来なら待てる場面で焦りやすいと感じる' },
-  { id:8,  s:2, text:'情報量が多い日ほど、頭が散りやすい' },
-  { id:9,  s:2, text:'頭では分かっていても、身体がついてこない感覚がある' },
-  { id:10, s:2, text:'「本来の自分ならもっと冴えていたのに」と感じることがある' },
-  { id:11, s:3, text:'胃腸の重さ、もたれ、張りを感じることがある' },
-  { id:12, s:3, text:'睡眠の質に課題を感じる' },
-  { id:13, s:3, text:'首肩のこり、頭の重さ、目の疲れが出やすい' },
-  { id:14, s:3, text:'疲れているのに気が張って休まりにくい' },
-  { id:15, s:3, text:'人に会った後や会食の後に、必要以上に疲れやすい' },
-  { id:16, s:4, text:'今は攻めたい気持ちはあるが、土台が追いついていない感覚がある' },
-  { id:17, s:4, text:'動いてはいるが、流れが噛み合っていない感じがある' },
-  { id:18, s:4, text:'今ここで一度しっかり整えると、その後の伸びが変わる気がする' },
+  // Section 1: ハードウェア基盤
+  { id:1,  s:1, text:'朝起きた瞬間から、すでに"戦闘不能"な感じがある' },
+  { id:2,  s:1, text:'食後に急激な眠気や、思考のモヤが出やすい' },
+  { id:3,  s:1, text:'夕方以降、本来の自分の"キレ"が出なくなる' },
+  { id:4,  s:1, text:'忙しい局面ほど、思考が散漫になりやすい' },
+  { id:5,  s:1, text:'以前と同じことをしても、消耗のスピードが速くなった' },
+  // Section 2: 判断精度
+  { id:6,  s:2, text:'重要な局面で"一瞬の判断"が鈍くなった気がする' },
+  { id:7,  s:2, text:'待つべき場面で焦って動いてしまうことがある' },
+  { id:8,  s:2, text:'情報が多い環境では、思考の整理に時間がかかる' },
+  { id:9,  s:2, text:'「わかっているのに動けない」という感覚が増えた' },
+  { id:10, s:2, text:'「本来の自分なら、もっと一瞬で判断できるはずなのに」と感じる' },
+  // Section 3: 内臓・自律神経
+  { id:11, s:3, text:'食後の胃腸の重さ・もたれが、午後のパフォーマンスを下げている' },
+  { id:12, s:3, text:'睡眠時間は確保しているのに、回復感がない' },
+  { id:13, s:3, text:'慢性的な首肩のこり・頭の重さ・目の疲れがある' },
+  { id:14, s:3, text:'疲れているのにスイッチが切れず、休んでも抜けない' },
+  { id:15, s:3, text:'会食・会議・人との交流の後、必要以上に消耗する' },
+  // Section 4: バイオリズム
+  { id:16, s:4, text:'攻めたい意志はあるが、身体がついてきていない' },
+  { id:17, s:4, text:'努力しているのに、空回りしている感覚がある' },
+  { id:18, s:4, text:'今ここで土台を整えると、その後の伸びが変わる直感がある' },
 ];
 
 const axes = [
@@ -407,10 +556,10 @@ function setRating(qId, val, btn) {
 }
 
 function updateProgress() {
-  const answered = questions.filter(q => ratings[q.id] !== null).length;
-  const pct = Math.round((answered / questions.length) * 100);
-  document.querySelector('.progress-fill') && (document.querySelector('.progress-fill').style.width = pct+'%');
-  document.querySelector('.progress-label') && (document.querySelector('.progress-label').textContent = `回答済み ${answered} / ${questions.length}`);
+  const answered = questions.filter(q=>ratings[q.id]!==null).length;
+  const pct = Math.round((answered/questions.length)*100);
+  document.querySelector('.progress-fill').style.width = pct+'%';
+  document.querySelector('.progress-label').textContent = `回答済み ${answered} / ${questions.length}`;
 }
 
 // ===================================================
@@ -433,9 +582,8 @@ function getColor(s) {
 let radarChart = null;
 
 function analyze() {
-  // Validation
   const unanswered = questions.filter(q=>ratings[q.id]===null);
-  if (document.getElementById('clientName').value.trim()==='') {
+  if (!document.getElementById('clientName').value.trim()) {
     document.getElementById('clientName').classList.add('error');
     document.getElementById('valAlert').textContent = '「お名前」を入力してください。';
     document.getElementById('valAlert').style.display = 'block';
@@ -444,7 +592,7 @@ function analyze() {
   }
   if (unanswered.length > 0) {
     unanswered.forEach(q => document.getElementById(`qrow-${q.id}`).classList.add('unanswered'));
-    document.getElementById('valAlert').textContent = `未回答の設問が ${unanswered.length} 件あります。すべての設問に回答してください。`;
+    document.getElementById('valAlert').textContent = `未回答が ${unanswered.length} 件あります。すべての設問に回答してください。`;
     document.getElementById('valAlert').style.display = 'block';
     document.getElementById(`qrow-${unanswered[0].id}`).scrollIntoView({behavior:'smooth',block:'center'});
     return;
@@ -462,11 +610,13 @@ function analyze() {
   const date = document.getElementById('meetingDate').value;
   const dateStr = date ? new Date(date).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'}) : '';
   document.getElementById('res-name').textContent = name + ' 様';
-  document.getElementById('res-meta').innerHTML = `France Direct<br>身体ポートフォリオ診断<br>${dateStr}`;
+  document.getElementById('res-meta').innerHTML = `France Direct<br>コア・アセット現状分析<br>${dateStr}`;
 
+  buildAssetStatus(scores);
   buildRadarChart(scores);
   buildScoreCards(scores);
   buildAlerts();
+  buildBottleneck(scores);
   buildCoachNotes(scores);
   buildFocus();
   buildFreeText();
@@ -474,42 +624,37 @@ function analyze() {
 }
 
 // ===================================================
-// SAVE
+// ASSET STATUS
 // ===================================================
-async function saveToSupabase(name, date, scores) {
-  const banner = document.getElementById('sendBanner');
-  banner.className = 'send-banner sending';
-  banner.textContent = 'データを送信中...';
-  banner.style.display = 'block';
+function buildAssetStatus(scores) {
+  const avg = Object.values(scores).reduce((a,b)=>a+b,0)/axes.length;
+  const pct = Math.round((1 - avg/5)*100);
+  const c = getColor(avg);
 
-  if (!db) {
-    banner.className = 'send-banner err';
-    banner.textContent = '⚠ オフライン送信不可。印刷して直接コーチへお渡しください。';
-    return;
+  const circle = document.getElementById('assetCircle');
+  circle.style.borderColor = c.hex;
+  document.getElementById('assetScoreVal').textContent = pct;
+  document.getElementById('assetScoreVal').className = `asc-val ${c.cls}`;
+  document.getElementById('assetScoreLbl').textContent = 'PERFORMANCE';
+  document.getElementById('assetScoreLbl').style.color = c.hex;
+
+  let title, sub;
+  if (avg < 1.5) {
+    title = 'コア・アセットは高水準で維持されています';
+    sub = '現在の土台は良好です。さらなる最適化で、ゾーン状態の継続が可能です。';
+  } else if (avg < 2.5) {
+    title = 'コア・アセットに軽微な劣化サインがあります';
+    sub = '今の段階で対処することで、本来のパフォーマンスを保てます。放置すると判断精度に影響が出始めます。';
+  } else if (avg < 3.5) {
+    title = 'コア・アセットに明確な負荷がかかっています';
+    sub = '内臓疲労と脳のノイズが、意思決定の精度を削っています。今の状態で重要な判断を下し続けることは、リスクです。';
+  } else {
+    title = 'コア・アセットが深刻な劣化状態にあります';
+    sub = 'ハードウェアのオーバーヒートが判断精度を直撃しています。この状態を放置した先にあるのは、最悪のタイミングでの致命的な判断ミスです。';
   }
 
-  const focuses = [...document.querySelectorAll('.check-list input:checked')].map(c=>c.value);
-  try {
-    const { error } = await db.from('diagnoses').insert({
-      client_name: name,
-      meeting_date: date || null,
-      client_email: document.getElementById('clientEmail').value.trim() || null,
-      client_job: document.getElementById('clientJob').value.trim() || null,
-      answers: ratings,
-      scores,
-      focuses,
-      free_text1: document.getElementById('ft1').value,
-      free_text2: document.getElementById('ft2').value,
-    });
-    if (error) throw error;
-    banner.className = 'send-banner';
-    banner.textContent = '✓ データをコーチに送信しました';
-    setTimeout(()=>{ banner.style.display='none'; }, 5000);
-  } catch(e) {
-    console.error('Save error:', e);
-    banner.className = 'send-banner err';
-    banner.textContent = '⚠ 送信エラー。印刷してコーチへ直接お渡しください。';
-  }
+  document.getElementById('assetTitle').textContent = title;
+  document.getElementById('assetSub').textContent = sub;
 }
 
 // ===================================================
@@ -571,6 +716,44 @@ function buildAlerts() {
 }
 
 // ===================================================
+// BOTTLENECK OPEN LOOP
+// ===================================================
+function buildBottleneck(scores) {
+  const sorted = axes.map(ax=>({...ax,score:scores[ax.key]})).sort((a,b)=>b.score-a.score);
+  const top = sorted[0];
+
+  const titles = {
+    recovery:  '回復力の枯渇が、すべてのパフォーマンスの土台を侵食しています',
+    digestion: '消化器系のノイズが、脳への血流と判断精度を直撃しています',
+    brain:     '脳疲労の蓄積が、本来の思考速度とキレを奪っています',
+    judgment:  '意思決定の処理系に深刻な負荷がかかっています',
+    autonomic: '自律神経の乱れが、回復と判断の両方を圧迫しています',
+    timing:    '身体の波とアクションのタイミングがズレています',
+  };
+  const bodies = {
+    recovery:  '高性能なエンジン（脳・思考）に対して、ラジエーター（回復力）が機能不全を起こしています。このまま走り続けると、もっとも大事な局面で完全停止するリスクがあります。',
+    digestion: '食後のパフォーマンス低下は「意志の弱さ」ではありません。腸内の炎症と毒素の蓄積が、脳への情報伝達を物理的に遅らせている状態です。消化の問題は、判断精度の問題です。',
+    brain:     '「わかっているのに動けない」「本来の自分ならもっとキレがあるはず」という感覚は、脳疲労のサインです。知識やスキルの問題ではなく、ハードウェア側の問題です。',
+    judgment:  '待つべき場面で焦る、動くべき場面で鈍る——この逆転は、身体のノイズが脳の判断系を侵食しているサインです。知識があっても、ハードが劣化していれば正しい判断は出せません。',
+    autonomic: '「頑張れているのに、なぜか抜けない」「眠れているのに疲れが取れない」。自律神経の乱れは、意志や根性では解決できません。身体の設計図レベルからの調整が必要です。',
+    timing:    '努力しているのに結果が出ない時期は、「バイオリズムの裏の波」に入っている可能性があります。攻めるべき時期と整えるべき時期を正確に読むことが、今もっとも重要なスキルです。',
+  };
+  const blurTexts = {
+    recovery:  '回復力低下の根本原因は○○にある。最優先で行うべき処置は△△。次の「フルパワーで動ける時期」は……',
+    digestion: '腸内環境の具体的な劣化パターンと、それが判断精度に与えている影響の詳細。最短でリセットするための処方箋は……',
+    brain:     '脳疲労の蓄積源は○○。細胞レベルでのリセットに要する期間と、その間の意思決定のリスク管理方法は……',
+    judgment:  '判断精度を下げているボトルネックの正体。ピンポイントで除去した場合、判断スピードが戻るまでの期間と具体的な方法は……',
+    autonomic: '自律神経の乱れのパターンと、あなたの生体設計図との関係。最も効果的な調整方法と、本来のリズムを取り戻す期間は……',
+    timing:    'あなたのバイオリズムにおける現在の位置。次の「攻めの波」が来るタイミングと、今すべき準備の詳細は……',
+  };
+
+  document.getElementById('bottleneckTitle').innerHTML =
+    `あなたのコア・アセットを最も侵食している<br><span>「${top.label}」</span>の問題`;
+  document.getElementById('bottleneckBody').textContent = bodies[top.key] || '';
+  document.getElementById('bottleneckBlurText').textContent = blurTexts[top.key] || '';
+}
+
+// ===================================================
 // COACH NOTES
 // ===================================================
 function buildCoachNotes(scores) {
@@ -580,99 +763,119 @@ function buildCoachNotes(scores) {
   const summary = avg<2
     ? '全体的に比較的安定した状態です。ただし、高スコアの項目は先手を打った対処が有効です。'
     : avg<3
-    ? 'いくつかの領域で負担が蓄積しています。放置すると判断精度に影響が出てきます。今の段階で整えると変化が出やすいタイミングです。'
-    : '複数の領域で負担が出ています。身体の不良債権が判断精度を削っている可能性が高い状態です。整えることで本来のパフォーマンスを取り戻しやすい段階です。';
+    ? 'いくつかの領域で負担が蓄積しています。今の段階で整えることで、本来のパフォーマンスを保てます。'
+    : '複数の領域で負担が出ています。身体の不良債権が判断精度を削っている可能性が高い状態です。';
 
   const interps = {
-    recovery:  {low:'回復力は比較的維持されています。',mid:'回復に少し時間がかかるサインが出ています。蓄積している状態です。',high:'回復の土台に負担がかかっています。睡眠と腸の状態を優先的に確認してください。'},
-    digestion: {low:'消化器系は比較的安定しています。',mid:'食後のパフォーマンス低下が判断精度に影響し始めています。',high:'消化器系の負担が判断精度に直接影響しています。ハーブファスティングによる腸のリセットが有効な状態です。'},
-    brain:     {low:'思考・集中力は比較的維持されています。',mid:'情報処理にコストがかかり始めています。夕方以降の集中力低下が出やすい状態です。',high:'脳疲労により本来の思考速度・集中力が出にくい状態です。脳のデトックスが優先課題です。'},
-    judgment:  {low:'判断精度は比較的安定しています。',mid:'決断の迷いや焦りが出やすい状態です。',high:'意思決定の質に直接影響が出ています。身体のノイズを取り除くことが急務です。'},
-    autonomic: {low:'自律神経は比較的安定しています。',mid:'気を張りすぎる・休んでも抜けきらない状態が出ています。',high:'自律神経の乱れが回復と判断の両方を圧迫しています。'},
-    timing:    {low:'今は比較的フローに乗れている感覚があります。',mid:'流れとのズレを感じているサインが出ています。',high:'今は攻めよりも整えを優先すべき時期のサインが出ています。'},
+    recovery: {low:'回復力は比較的維持されています。',mid:'回復に時間がかかり始めています。蓄積している状態です。',high:'ハードウェアの回復機能に深刻な負荷。睡眠と腸の状態を優先的に確認してください。'},
+    digestion:{low:'消化器系は比較的安定しています。',mid:'食後のパフォーマンス低下が判断精度に影響し始めています。',high:'腸内の炎症が脳への情報伝達を遅らせています。ハーブファスティングによる腸のリセットが有効な状態です。'},
+    brain:    {low:'思考・集中力は比較的維持されています。',mid:'情報処理にコストがかかり始めています。',high:'脳疲労により本来の判断速度・集中力が出にくい状態です。デトックスが優先課題です。'},
+    judgment: {low:'判断精度は比較的安定しています。',mid:'決断の迷いや焦りが出やすい状態です。',high:'意思決定の質に直接影響が出ています。身体のノイズを先に取り除くことが急務です。'},
+    autonomic:{low:'自律神経は比較的安定しています。',mid:'気を張りすぎる・休んでも抜けきらない状態が出ています。',high:'自律神経の乱れが回復と判断の両方を圧迫しています。'},
+    timing:   {low:'今は比較的フローに乗れている感覚があります。',mid:'流れとのズレを感じているサインが出ています。',high:'今は攻めよりも整えを優先すべき時期です。無理に攻めると空回りしやすい局面です。'},
   };
-  const gi = (key,s)=>{ const i=interps[key]; return s<2?i.low:s<3.5?i.mid:i.high; };
+  const gi=(key,s)=>{const i=interps[key];return s<2?i.low:s<3.5?i.mid:i.high;};
 
   const top=sorted[0], sec=sorted[1];
-  const combos = {
+  const combos={
     'recovery+digestion':'回復力と消化器系の両方に負荷がかかっています。腸をリセットし、回復の土台を作ることが最初のステップです。',
-    'recovery+brain':'回復できないまま脳を使い続けている状態です。',
-    'recovery+judgment':'疲労が判断精度を直撃しています。本来の意思決定力を取り戻すには、まず回復の土台が必要です。',
-    'digestion+brain':'腸と脳のつながり（腸脳軸）に負荷がかかっています。消化器のリセットが脳のクリア感に直結します。',
-    'digestion+judgment':'食後のパフォーマンス低下が、重要な判断のタイミングと重なっている可能性があります。',
+    'recovery+brain':'回復できないまま脳を使い続けている状態です。休んでも頭が冴えない感覚がある方が多い状態です。',
+    'digestion+brain':'腸脳軸に負荷がかかっています。消化器のリセットが脳のクリア感に直結します。',
     'brain+judgment':'思考と判断の両方にノイズが入っています。脳疲労をリセットすることで本来の精度が戻りやすい状態です。',
+    'recovery+judgment':'疲労が判断精度を直撃しています。回復の土台なしに判断精度は上がりません。',
     'autonomic+timing':'自律神経の乱れが流れとのズレを生んでいます。整える時期と攻める時期の見極めが今は特に重要です。',
   };
-  const tp = top.score>=3
-    ? (combos[`${top.key}+${sec.key}`]||combos[`${sec.key}+${top.key}`]||`特に「${top.label}」と「${sec.label}」への対処が優先度高です。`)
-    : '今はまだ余裕がある段階です。予防的なメンテナンスを始めるには良いタイミングです。';
+  const tp=top.score>=3?(combos[`${top.key}+${sec.key}`]||combos[`${sec.key}+${top.key}`]||`特に「${top.label}」と「${sec.label}」への対処が優先度高です。`):'今はまだ余裕がある段階です。予防的なメンテナンスを始めるには良いタイミングです。';
 
-  const highAxes = sorted.filter(ax=>ax.score>=3);
-  let blocks = highAxes.map(ax=>`
+  const highAxes=sorted.filter(ax=>ax.score>=3);
+  let blocks=highAxes.map(ax=>`
     <div class="coach-block">
       <div class="coach-block-lbl">${ax.label}（スコア ${ax.score.toFixed(1)}）</div>
       <div class="coach-block-text">${gi(ax.key,ax.score)}</div>
-    </div>`).join('') || `<div class="coach-block"><div class="coach-block-text">現時点では全軸で比較的安定しています。</div></div>`;
+    </div>`).join('')||`<div class="coach-block"><div class="coach-block-text">現時点では全軸で比較的安定しています。定期メンテナンスの観点から、波の読み方をご案内するのが自然な流れです。</div></div>`;
 
   document.getElementById('coachContent').innerHTML = `
     <div class="coach-block"><div class="coach-block-lbl">総評</div><div class="coach-block-text">${summary}</div></div>
     ${blocks}
-    <div class="coach-block"><div class="coach-block-lbl">コーチへの示唆（会話の入口）</div><div class="coach-block-text">${tp}</div></div>`;
+    <div class="coach-block"><div class="coach-block-lbl">会話の入口（示唆）</div><div class="coach-block-text">${tp}</div></div>`;
 }
 
 // ===================================================
-// FOCUS & FREETEXT
+// FOCUS & FREE TEXT
 // ===================================================
 function buildFocus() {
-  const checks = [...document.querySelectorAll('.check-list input:checked')];
-  const card = document.getElementById('focusCard');
-  if (checks.length) {
+  const checks=[...document.querySelectorAll('.check-list input:checked')];
+  const card=document.getElementById('focusCard');
+  if(checks.length){
     card.style.display='block';
-    document.getElementById('focusTags').innerHTML = checks.map(c=>`<div class="focus-tag">${c.value}</div>`).join('');
+    document.getElementById('focusTags').innerHTML=checks.map(c=>`<div class="focus-tag">${c.value}</div>`).join('');
   } else card.style.display='none';
 }
 function buildFreeText() {
   const ft1=document.getElementById('ft1').value.trim();
   const ft2=document.getElementById('ft2').value.trim();
   const card=document.getElementById('ftCard');
-  if (ft1||ft2) {
+  if(ft1||ft2){
     card.style.display='block';
     let h='';
     if(ft1) h+=`<div class="ft-display-q">今、一番整えたいこと</div><div class="ft-display-a">${ft1}</div>`;
-    if(ft2) h+=`<div class="ft-display-q">半年後の理想状態</div><div class="ft-display-a">${ft2}</div>`;
+    if(ft2) h+=`<div class="ft-display-q">「本来の自分」が100%出ている状態</div><div class="ft-display-a">${ft2}</div>`;
     document.getElementById('ftDisplay').innerHTML=h;
   } else card.style.display='none';
+}
+
+// ===================================================
+// SAVE
+// ===================================================
+async function saveToSupabase(name, date, scores) {
+  const banner=document.getElementById('sendBanner');
+  banner.className='send-banner sending'; banner.style.display='block';
+  banner.textContent='データを送信中...';
+  if(!db){ banner.className='send-banner err'; banner.textContent='⚠ オフライン。印刷してコーチへ直接お渡しください。'; return; }
+  const focuses=[...document.querySelectorAll('.check-list input:checked')].map(c=>c.value);
+  try {
+    const {error}=await db.from('diagnoses').insert({
+      client_name:name, meeting_date:date||null,
+      client_email:document.getElementById('clientEmail').value.trim()||null,
+      client_job:document.getElementById('clientJob').value.trim()||null,
+      answers:ratings, scores, focuses,
+      free_text1:document.getElementById('ft1').value,
+      free_text2:document.getElementById('ft2').value,
+    });
+    if(error) throw error;
+    banner.className='send-banner ok'; banner.textContent='✓ データをアドバイザーに送信しました';
+    setTimeout(()=>{ banner.style.display='none'; },5000);
+  } catch(e){
+    console.error(e);
+    banner.className='send-banner err'; banner.textContent='⚠ 送信エラー。印刷してアドバイザーへ直接お渡しください。';
+  }
 }
 
 // ===================================================
 // RESET
 // ===================================================
 function resetForm() {
-  questions.forEach(q=>{ratings[q.id]=null;});
+  questions.forEach(q=>{ ratings[q.id]=null; });
   document.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel','sel-high','sel-crit'));
   document.querySelectorAll('.q-row').forEach(r=>r.classList.remove('unanswered'));
   document.querySelectorAll('.check-list input').forEach(c=>c.checked=false);
   document.querySelectorAll('.text-input').forEach(i=>{ i.value=''; i.classList.remove('error'); });
-  document.getElementById('ft1').value='';
-  document.getElementById('ft2').value='';
+  document.getElementById('ft1').value=''; document.getElementById('ft2').value='';
   document.getElementById('meetingDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('valAlert').style.display='none';
   document.getElementById('results').style.display='none';
   document.getElementById('survey').style.display='block';
-  window.scrollTo(0,0);
-  updateProgress();
+  window.scrollTo(0,0); updateProgress();
 }
 
 // ===================================================
 // INIT
 // ===================================================
-// Add progress bar HTML
-const container = document.querySelector('.container');
-const progressHTML = document.createElement('div');
-progressHTML.innerHTML = '<div class="progress-label">回答済み 0 / 18</div><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>';
-container.insertBefore(progressHTML, container.firstChild);
-
-document.getElementById('clientName').addEventListener('input', function(){ this.classList.remove('error'); });
+const cont=document.querySelector('.container');
+const pb=document.createElement('div');
+pb.innerHTML='<div class="progress-label">回答済み 0 / 18</div><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>';
+cont.insertBefore(pb,cont.firstChild);
+document.getElementById('clientName').addEventListener('input',function(){this.classList.remove('error');});
 </script>
 </body>
 </html>
