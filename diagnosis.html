@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>身体ポートフォリオ診断シート | France Direct</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --gold: #b49650; --gold-light: #c8aa6e; --gold-dim: rgba(180,150,80,0.12);
+  --dark: #0a0a14; --dark2: #0e0e1e; --dark3: #141428;
+  --text: #dde2f0; --text-muted: #6878a0; --border: rgba(180,150,80,0.18);
+  --green: #4aaa70; --yellow: #c8a828; --orange: #d07830; --red: #d04848;
+}
+body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+
+.app-header { background: var(--dark2); border-bottom: 1px solid var(--border); padding: 14px 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+.app-header h1 { font-size: 13px; color: var(--gold); letter-spacing: 0.14em; font-weight: 700; }
+.app-header p { font-size: 10px; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.08em; }
+
+.container { max-width: 740px; margin: 0 auto; padding: 20px 14px 80px; }
+
+/* Progress bar */
+.progress-bar { height: 2px; background: rgba(180,150,80,0.15); margin-bottom: 20px; }
+.progress-fill { height: 100%; background: var(--gold); transition: width 0.4s ease; }
+.progress-label { font-size: 10px; color: var(--text-muted); text-align: right; margin-bottom: 6px; letter-spacing: 0.05em; }
+
+.card { background: var(--dark3); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; }
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.card-tag { font-size: 9px; color: var(--gold); border: 1px solid rgba(180,150,80,0.5); padding: 2px 7px; letter-spacing: 0.12em; font-weight: 700; white-space: nowrap; }
+.card-title { font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.04em; }
+.card-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.field-group { flex: 1; min-width: 150px; }
+.field-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 5px; display: block; }
+.field-required { color: var(--red); margin-left: 2px; }
+.text-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; font-size: 13px; font-family: inherit; transition: border-color 0.15s; }
+.text-input:focus { outline: none; border-color: var(--gold); }
+.text-input.error { border-color: var(--red); }
+
+.check-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+@media (max-width: 500px) { .check-list { grid-template-columns: 1fr; } }
+.check-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s; }
+.check-item:hover { border-color: var(--border); background: var(--gold-dim); }
+.check-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--gold); flex-shrink: 0; }
+.check-item label { font-size: 11.5px; color: var(--text); cursor: pointer; line-height: 1.4; }
+
+.scale-header-row { display: flex; align-items: center; margin-bottom: 8px; }
+.scale-header-row .spacer { flex: 1; }
+.scale-labels { display: flex; gap: 3px; }
+.scale-lbl { width: 36px; font-size: 9px; color: var(--text-muted); text-align: center; line-height: 1.4; }
+.scale-lbl:first-child { color: var(--green); }
+.scale-lbl:last-child { color: var(--red); }
+
+.q-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.q-row:last-child { border-bottom: none; }
+.q-row.unanswered .q-text { color: var(--red); }
+.q-num { font-size: 9px; color: var(--gold); font-weight: 700; min-width: 22px; text-align: right; flex-shrink: 0; }
+.q-text { flex: 1; font-size: 12px; color: var(--text); line-height: 1.5; }
+.q-btns { display: flex; gap: 3px; flex-shrink: 0; }
+
+.r-btn { width: 36px; height: 36px; border: 1px solid rgba(180,150,80,0.2); background: rgba(255,255,255,0.02); color: var(--text-muted); font-size: 11px; cursor: pointer; font-family: inherit; font-weight: 600; transition: all 0.12s; user-select: none; }
+.r-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.r-btn.sel      { border-color: var(--gold);   background: var(--gold);   color: var(--dark); font-weight: 700; }
+.r-btn.sel-high { border-color: var(--orange);  background: var(--orange); color: #fff; font-weight: 700; }
+.r-btn.sel-crit { border-color: var(--red);     background: var(--red);   color: #fff; font-weight: 700; }
+
+.ft-label { font-size: 11px; color: var(--text-muted); margin-top: 14px; margin-bottom: 6px; line-height: 1.6; }
+.ft-label:first-child { margin-top: 0; }
+.ft-area { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; font-size: 12px; font-family: inherit; resize: vertical; min-height: 80px; line-height: 1.7; }
+.ft-area:focus { outline: none; border-color: var(--gold); }
+
+/* validation alert */
+.val-alert { background: rgba(208,72,72,0.1); border: 1px solid rgba(208,72,72,0.4); color: var(--red); font-size: 11px; padding: 10px 14px; margin-bottom: 12px; display: none; line-height: 1.6; }
+
+.analyze-btn { width: 100%; background: var(--gold); color: var(--dark); border: none; padding: 18px; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; font-family: inherit; margin-top: 10px; transition: background 0.2s; }
+.analyze-btn:hover { background: var(--gold-light); }
+.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== RESULTS ===== */
+#results { display: none; }
+
+.send-banner { background: rgba(74,170,112,0.12); border: 1px solid rgba(74,170,112,0.4); color: var(--green); font-size: 12px; font-weight: 700; padding: 12px 18px; text-align: center; margin-bottom: 16px; letter-spacing: 0.04em; }
+.send-banner.err { background: rgba(208,72,72,0.1); border-color: rgba(208,72,72,0.4); color: var(--red); }
+.send-banner.sending { background: rgba(180,150,80,0.08); border-color: var(--border); color: var(--text-muted); }
+
+.results-top { display: flex; justify-content: space-between; align-items: flex-end; padding: 14px 0 14px; border-bottom: 1px solid var(--border); margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.results-name { font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; }
+.results-meta { font-size: 10px; color: var(--text-muted); text-align: right; line-height: 1.9; }
+
+.chart-card { background: var(--dark3); border: 1px solid var(--border); padding: 20px; margin-bottom: 14px; }
+.chart-card-title { font-size: 10px; color: var(--gold); letter-spacing: 0.18em; font-weight: 700; text-align: center; margin-bottom: 16px; }
+.chart-wrap { max-width: 400px; margin: 0 auto; }
+
+.score-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+@media (max-width: 520px) { .score-grid { grid-template-columns: repeat(2,1fr); } }
+.sc-card { background: var(--dark3); border: 1px solid var(--border); padding: 12px; }
+.sc-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+.sc-label { font-size: 10px; font-weight: 700; color: var(--text); }
+.sc-val { font-size: 22px; font-weight: 700; line-height: 1; }
+.sc-bar-bg { height: 5px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
+.sc-bar-fill { height: 100%; border-radius: 2px; }
+.sc-level { font-size: 9px; color: var(--text-muted); }
+
+.c-green{color:var(--green)} .c-yellow{color:var(--yellow)} .c-orange{color:var(--orange)} .c-red{color:var(--red)}
+.f-green{background:var(--green)} .f-yellow{background:var(--yellow)} .f-orange{background:var(--orange)} .f-red{background:var(--red)}
+
+.alert-card { background: var(--dark3); border: 1px solid rgba(208,72,72,0.3); padding: 14px 18px; margin-bottom: 14px; }
+.alert-card-title { font-size: 9px; color: var(--red); letter-spacing: 0.18em; font-weight: 700; margin-bottom: 10px; }
+.alert-item { display: flex; gap: 8px; margin-bottom: 7px; font-size: 11px; color: var(--text); line-height: 1.5; align-items: flex-start; }
+.alert-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+
+.coach-card { background: var(--dark3); border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; }
+.coach-card-title { font-size: 9px; color: var(--gold); letter-spacing: 0.2em; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.coach-block { margin-bottom: 14px; }
+.coach-block:last-child { margin-bottom: 0; }
+.coach-block-lbl { font-size: 9px; color: var(--gold); font-weight: 700; letter-spacing: 0.08em; margin-bottom: 6px; }
+.coach-block-text { font-size: 12px; color: var(--text); line-height: 1.85; background: rgba(255,255,255,0.025); padding: 10px 12px; border-left: 2px solid var(--gold); }
+
+.info-card { background: var(--dark3); border: 1px solid var(--border); padding: 14px 18px; margin-bottom: 14px; }
+.info-title { font-size: 9px; color: var(--gold); letter-spacing: 0.18em; font-weight: 700; margin-bottom: 10px; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.focus-tag { font-size: 11px; background: var(--gold-dim); border: 1px solid var(--gold); color: var(--gold); padding: 3px 10px; }
+.ft-display-q { font-size: 10px; color: var(--text-muted); margin-top: 12px; margin-bottom: 5px; }
+.ft-display-q:first-child { margin-top: 0; }
+.ft-display-a { font-size: 12px; color: var(--text); line-height: 1.8; background: rgba(255,255,255,0.025); padding: 8px 12px; border-left: 2px solid var(--gold); min-height: 36px; white-space: pre-wrap; }
+
+.action-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.btn-primary { flex: 1; min-width: 160px; background: var(--gold); color: var(--dark); border: none; padding: 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.06em; }
+.btn-primary:hover { background: var(--gold-light); }
+.btn-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 14px 18px; font-size: 11px; cursor: pointer; font-family: inherit; }
+.btn-secondary:hover { color: var(--text); border-color: var(--text-muted); }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .app-header { position: static; background: #fff; border-bottom: 1px solid #ccc; }
+  .app-header h1 { color: #333 !important; }
+  .app-header p { color: #666 !important; }
+  #survey, .action-row, .send-banner, .progress-bar, .progress-label { display: none !important; }
+  #results { display: block !important; }
+  .card, .chart-card, .sc-card, .coach-card, .info-card, .alert-card { background: #fff !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .sc-bar-bg { background: #eee !important; }
+  .coach-block-text, .ft-display-a { background: #f8f8f8 !important; color: #000 !important; }
+  .sc-label, .results-name { color: #000 !important; }
+  .chart-card-title, .coach-card-title, .info-title, .alert-card-title { color: #333 !important; }
+  .results-meta, .sc-level { color: #666 !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>身体ポートフォリオ診断シート</h1>
+  <p>判断精度と生体資本の現在地可視化　|　France Direct</p>
+</header>
+
+<div class="container">
+
+<!-- ======================== SURVEY ======================== -->
+<div id="survey">
+
+  <!-- 基本情報 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-tag">PROFILE</div>
+      <div class="card-title">基本情報</div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">お名前<span class="field-required">*</span></label>
+        <input class="text-input" type="text" id="clientName" placeholder="例：山田 太郎">
+      </div>
+      <div class="field-group">
+        <label class="field-label">面談日</label>
+        <input class="text-input" type="date" id="meetingDate">
+      </div>
+    </div>
+    <div class="field-row" style="margin-top:10px;">
+      <div class="field-group">
+        <label class="field-label">メールアドレス（任意）</label>
+        <input class="text-input" type="email" id="clientEmail" placeholder="例：yamada@example.com">
+      </div>
+      <div class="field-group">
+        <label class="field-label">ご職業（任意）</label>
+        <input class="text-input" type="text" id="clientJob" placeholder="例：投資家、経営者">
+      </div>
+    </div>
+  </div>
+
+  <!-- FOCUS -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-tag">FOCUS</div>
+      <div>
+        <div class="card-title">今日特に知りたいことは？</div>
+        <div class="card-sub">複数選択可</div>
+      </div>
+    </div>
+    <div class="check-list">
+      <div class="check-item"><input type="checkbox" id="f1" value="判断精度を下げている要因"><label for="f1">判断精度を下げている要因</label></div>
+      <div class="check-item"><input type="checkbox" id="f2" value="身体の負担が出やすい場所"><label for="f2">身体の負担が出やすい場所</label></div>
+      <div class="check-item"><input type="checkbox" id="f3" value="今は攻める時期か整える時期か"><label for="f3">攻める時期か整える時期か</label></div>
+      <div class="check-item"><input type="checkbox" id="f4" value="ハーブファスティングの必要性"><label for="f4">ハーブファスティングの必要性</label></div>
+      <div class="check-item"><input type="checkbox" id="f5" value="今後のバイオリズム"><label for="f5">今後のバイオリズム</label></div>
+      <div class="check-item"><input type="checkbox" id="f6" value="健康と資産形成のバランス"><label for="f6">健康と資産形成のバランス</label></div>
+      <div class="check-item"><input type="checkbox" id="f7" value="その他"><label for="f7">その他</label></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="card">
+    <div class="card-header"><div class="card-tag">SECTION 1</div><div class="card-title">今のパフォーマンス状態</div></div>
+    <div class="scale-header-row">
+      <div class="spacer"></div>
+      <div class="scale-labels">
+        <div class="scale-lbl">0<br><span style="font-size:8px">なし</span></div>
+        <div class="scale-lbl">1</div><div class="scale-lbl">2</div>
+        <div class="scale-lbl">3</div><div class="scale-lbl">4</div>
+        <div class="scale-lbl">5<br><span style="font-size:8px">強</span></div>
+      </div>
+    </div>
+    <div id="s1-questions"></div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="card">
+    <div class="card-header"><div class="card-tag">SECTION 2</div><div class="card-title">判断精度の乱れ</div></div>
+    <div class="scale-header-row">
+      <div class="spacer"></div>
+      <div class="scale-labels">
+        <div class="scale-lbl">0</div><div class="scale-lbl">1</div><div class="scale-lbl">2</div>
+        <div class="scale-lbl">3</div><div class="scale-lbl">4</div><div class="scale-lbl">5</div>
+      </div>
+    </div>
+    <div id="s2-questions"></div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="card">
+    <div class="card-header"><div class="card-tag">SECTION 3</div><div class="card-title">体の負担サイン</div></div>
+    <div class="scale-header-row">
+      <div class="spacer"></div>
+      <div class="scale-labels">
+        <div class="scale-lbl">0</div><div class="scale-lbl">1</div><div class="scale-lbl">2</div>
+        <div class="scale-lbl">3</div><div class="scale-lbl">4</div><div class="scale-lbl">5</div>
+      </div>
+    </div>
+    <div id="s3-questions"></div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="card">
+    <div class="card-header"><div class="card-tag">SECTION 4</div><div class="card-title">今のタイミング感</div></div>
+    <div class="scale-header-row">
+      <div class="spacer"></div>
+      <div class="scale-labels">
+        <div class="scale-lbl">0</div><div class="scale-lbl">1</div><div class="scale-lbl">2</div>
+        <div class="scale-lbl">3</div><div class="scale-lbl">4</div><div class="scale-lbl">5</div>
+      </div>
+    </div>
+    <div id="s4-questions"></div>
+  </div>
+
+  <!-- FREE TEXT -->
+  <div class="card">
+    <div class="card-header"><div class="card-tag">FREE</div><div class="card-title">自由記述</div></div>
+    <div class="ft-label">今、仕事・投資・人生全体で一番整えたいことは何ですか？</div>
+    <textarea class="ft-area" id="ft1" placeholder="自由にご記入ください"></textarea>
+    <div class="ft-label">半年後、「この面談を受けてよかった」と思える状態はどんな状態ですか？</div>
+    <textarea class="ft-area" id="ft2" placeholder="自由にご記入ください"></textarea>
+  </div>
+
+  <div class="val-alert" id="valAlert"></div>
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">診断結果を見る →</button>
+
+</div><!-- /survey -->
+
+
+<!-- ======================== RESULTS ======================== -->
+<div id="results">
+
+  <div id="sendBanner" class="send-banner sending">データを送信中...</div>
+
+  <div class="results-top">
+    <div><div id="res-name" class="results-name"></div></div>
+    <div id="res-meta" class="results-meta"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-title">身体ポートフォリオ　レーダーチャート</div>
+    <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+  </div>
+
+  <div class="score-grid" id="scoreGrid"></div>
+
+  <div class="alert-card" id="alertCard" style="display:none;">
+    <div class="alert-card-title">HIGH ALERT — スコア4以上の項目</div>
+    <div id="alertList"></div>
+  </div>
+
+  <div class="coach-card">
+    <div class="coach-card-title">COACH NOTE — 読み取りガイド</div>
+    <div id="coachContent"></div>
+  </div>
+
+  <div class="info-card" id="focusCard" style="display:none;">
+    <div class="info-title">TODAY'S FOCUS — 本日特に知りたいこと</div>
+    <div class="tag-row" id="focusTags"></div>
+  </div>
+
+  <div class="info-card" id="ftCard" style="display:none;">
+    <div class="info-title">FREE TEXT — 記述回答</div>
+    <div id="ftDisplay"></div>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-primary" onclick="window.print()">PDFをダウンロード（印刷）</button>
+    <button class="btn-secondary" onclick="resetForm()">← 最初からやり直す</button>
+  </div>
+
+</div><!-- /results -->
+
+</div><!-- /container -->
+
+<script>
+// ===================================================
+// SUPABASE
+// ===================================================
+const SUPABASE_URL  = 'https://fnzimwshyctxkxyzfkpv.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuemltd3NoeWN0eGt4eXpma3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0OTEsImV4cCI6MjA4ODU0NzQ5MX0.Yt1DjKFA8L7IlG8ap-cr0Cv3D2TlBKesu3SNnSjB_UU';
+let db = null;
+try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn('Supabase init error:', e); }
+
+// ===================================================
+// QUESTIONS
+// ===================================================
+const questions = [
+  { id:1,  s:1, text:'朝起きた時点で、すでに疲れが残っている感じがある' },
+  { id:2,  s:1, text:'食後に眠気や頭の重さが出やすい' },
+  { id:3,  s:1, text:'夕方以降、思考のキレが落ちやすい' },
+  { id:4,  s:1, text:'忙しい時ほど、集中力が続きにくい' },
+  { id:5,  s:1, text:'以前に比べて、回復に時間がかかるようになった' },
+  { id:6,  s:2, text:'最近、決断に時間がかかることが増えた' },
+  { id:7,  s:2, text:'本来なら待てる場面で焦りやすいと感じる' },
+  { id:8,  s:2, text:'情報量が多い日ほど、頭が散りやすい' },
+  { id:9,  s:2, text:'頭では分かっていても、身体がついてこない感覚がある' },
+  { id:10, s:2, text:'「本来の自分ならもっと冴えていたのに」と感じることがある' },
+  { id:11, s:3, text:'胃腸の重さ、もたれ、張りを感じることがある' },
+  { id:12, s:3, text:'睡眠の質に課題を感じる' },
+  { id:13, s:3, text:'首肩のこり、頭の重さ、目の疲れが出やすい' },
+  { id:14, s:3, text:'疲れているのに気が張って休まりにくい' },
+  { id:15, s:3, text:'人に会った後や会食の後に、必要以上に疲れやすい' },
+  { id:16, s:4, text:'今は攻めたい気持ちはあるが、土台が追いついていない感覚がある' },
+  { id:17, s:4, text:'動いてはいるが、流れが噛み合っていない感じがある' },
+  { id:18, s:4, text:'今ここで一度しっかり整えると、その後の伸びが変わる気がする' },
+];
+
+const axes = [
+  { key:'recovery',  label:'回復力',     qs:[1,5] },
+  { key:'digestion', label:'消化・腸',   qs:[2,11,15] },
+  { key:'brain',     label:'脳・集中',   qs:[3,4,8] },
+  { key:'judgment',  label:'判断精度',   qs:[6,7,9,10] },
+  { key:'autonomic', label:'自律神経',   qs:[12,13,14] },
+  { key:'timing',    label:'タイミング', qs:[16,17,18] },
+];
+
+const ratings = {};
+questions.forEach(q => ratings[q.id] = null);
+
+// ===================================================
+// BUILD UI
+// ===================================================
+function buildSection(sNum, cId) {
+  const container = document.getElementById(cId);
+  questions.filter(q => q.s === sNum).forEach(q => {
+    const row = document.createElement('div');
+    row.className = 'q-row'; row.id = `qrow-${q.id}`;
+    row.innerHTML = `
+      <span class="q-num">Q${q.id}</span>
+      <span class="q-text">${q.text}</span>
+      <div class="q-btns" id="btns-${q.id}">
+        ${[0,1,2,3,4,5].map(v=>`<button class="r-btn" onclick="setRating(${q.id},${v},this)">${v}</button>`).join('')}
+      </div>`;
+    container.appendChild(row);
+  });
+}
+buildSection(1,'s1-questions');
+buildSection(2,'s2-questions');
+buildSection(3,'s3-questions');
+buildSection(4,'s4-questions');
+document.getElementById('meetingDate').value = new Date().toISOString().split('T')[0];
+
+// ===================================================
+// RATING
+// ===================================================
+function setRating(qId, val, btn) {
+  ratings[qId] = val;
+  document.getElementById(`qrow-${qId}`).classList.remove('unanswered');
+  document.querySelectorAll(`#btns-${qId} .r-btn`).forEach((b,i) => {
+    b.classList.remove('sel','sel-high','sel-crit');
+    if (i === val) b.classList.add(val>=5?'sel-crit':val>=4?'sel-high':'sel');
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = questions.filter(q => ratings[q.id] !== null).length;
+  const pct = Math.round((answered / questions.length) * 100);
+  document.querySelector('.progress-fill') && (document.querySelector('.progress-fill').style.width = pct+'%');
+  document.querySelector('.progress-label') && (document.querySelector('.progress-label').textContent = `回答済み ${answered} / ${questions.length}`);
+}
+
+// ===================================================
+// SCORE
+// ===================================================
+function getAxisScore(qIds) {
+  const vals = qIds.map(id=>ratings[id]).filter(v=>v!==null);
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+}
+function getColor(s) {
+  if (s<2) return {cls:'c-green', fill:'f-green', label:'良好',    hex:'#4aaa70'};
+  if (s<3) return {cls:'c-yellow',fill:'f-yellow',label:'注意',    hex:'#c8a828'};
+  if (s<4) return {cls:'c-orange',fill:'f-orange',label:'要対処',  hex:'#d07830'};
+  return        {cls:'c-red',   fill:'f-red',   label:'要即対応', hex:'#d04848'};
+}
+
+// ===================================================
+// ANALYZE
+// ===================================================
+let radarChart = null;
+
+function analyze() {
+  // Validation
+  const unanswered = questions.filter(q=>ratings[q.id]===null);
+  if (document.getElementById('clientName').value.trim()==='') {
+    document.getElementById('clientName').classList.add('error');
+    document.getElementById('valAlert').textContent = '「お名前」を入力してください。';
+    document.getElementById('valAlert').style.display = 'block';
+    document.getElementById('clientName').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  if (unanswered.length > 0) {
+    unanswered.forEach(q => document.getElementById(`qrow-${q.id}`).classList.add('unanswered'));
+    document.getElementById('valAlert').textContent = `未回答の設問が ${unanswered.length} 件あります。すべての設問に回答してください。`;
+    document.getElementById('valAlert').style.display = 'block';
+    document.getElementById(`qrow-${unanswered[0].id}`).scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  document.getElementById('valAlert').style.display = 'none';
+
+  const scores = {};
+  axes.forEach(ax => scores[ax.key] = getAxisScore(ax.qs));
+
+  document.getElementById('survey').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo(0,0);
+
+  const name = document.getElementById('clientName').value.trim();
+  const date = document.getElementById('meetingDate').value;
+  const dateStr = date ? new Date(date).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'}) : '';
+  document.getElementById('res-name').textContent = name + ' 様';
+  document.getElementById('res-meta').innerHTML = `France Direct<br>身体ポートフォリオ診断<br>${dateStr}`;
+
+  buildRadarChart(scores);
+  buildScoreCards(scores);
+  buildAlerts();
+  buildCoachNotes(scores);
+  buildFocus();
+  buildFreeText();
+  saveToSupabase(name, date, scores);
+}
+
+// ===================================================
+// SAVE
+// ===================================================
+async function saveToSupabase(name, date, scores) {
+  const banner = document.getElementById('sendBanner');
+  banner.className = 'send-banner sending';
+  banner.textContent = 'データを送信中...';
+  banner.style.display = 'block';
+
+  if (!db) {
+    banner.className = 'send-banner err';
+    banner.textContent = '⚠ オフライン送信不可。印刷して直接コーチへお渡しください。';
+    return;
+  }
+
+  const focuses = [...document.querySelectorAll('.check-list input:checked')].map(c=>c.value);
+  try {
+    const { error } = await db.from('diagnoses').insert({
+      client_name: name,
+      meeting_date: date || null,
+      client_email: document.getElementById('clientEmail').value.trim() || null,
+      client_job: document.getElementById('clientJob').value.trim() || null,
+      answers: ratings,
+      scores,
+      focuses,
+      free_text1: document.getElementById('ft1').value,
+      free_text2: document.getElementById('ft2').value,
+    });
+    if (error) throw error;
+    banner.className = 'send-banner';
+    banner.textContent = '✓ データをコーチに送信しました';
+    setTimeout(()=>{ banner.style.display='none'; }, 5000);
+  } catch(e) {
+    console.error('Save error:', e);
+    banner.className = 'send-banner err';
+    banner.textContent = '⚠ 送信エラー。印刷してコーチへ直接お渡しください。';
+  }
+}
+
+// ===================================================
+// RADAR
+// ===================================================
+function buildRadarChart(scores) {
+  if (radarChart) { radarChart.destroy(); radarChart = null; }
+  document.querySelector('.chart-wrap').innerHTML = '<canvas id="radarChart"></canvas>';
+  radarChart = new Chart(document.getElementById('radarChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: axes.map(ax=>ax.label),
+      datasets: [{
+        label: '現在地', data: axes.map(ax=>scores[ax.key]),
+        backgroundColor: 'rgba(180,150,80,0.18)', borderColor: '#b49650', borderWidth: 2,
+        pointBackgroundColor: '#b49650', pointBorderColor: '#b49650', pointRadius: 5, pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: { r: {
+        min:0, max:5,
+        ticks:{ stepSize:1, color:'rgba(180,150,80,0.5)', font:{size:9}, backdropColor:'transparent' },
+        grid:{ color:'rgba(180,150,80,0.12)' },
+        angleLines:{ color:'rgba(180,150,80,0.15)' },
+        pointLabels:{ color:'#dde2f0', font:{size:12,weight:'bold'} }
+      }},
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:ctx=>` ${ctx.label}：${ctx.raw.toFixed(1)} / 5.0` }}}
+    }
+  });
+}
+
+// ===================================================
+// SCORE CARDS
+// ===================================================
+function buildScoreCards(scores) {
+  document.getElementById('scoreGrid').innerHTML = axes.map(ax => {
+    const s=scores[ax.key], c=getColor(s);
+    return `<div class="sc-card">
+      <div class="sc-top"><div class="sc-label">${ax.label}</div><div class="sc-val ${c.cls}">${s.toFixed(1)}</div></div>
+      <div class="sc-bar-bg"><div class="sc-bar-fill ${c.fill}" style="width:${(s/5)*100}%"></div></div>
+      <div class="sc-level ${c.cls}">${c.label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===================================================
+// ALERTS
+// ===================================================
+function buildAlerts() {
+  const high = questions.filter(q=>ratings[q.id]>=4);
+  const card = document.getElementById('alertCard');
+  if (high.length) {
+    card.style.display='block';
+    document.getElementById('alertList').innerHTML = high.map(q=>`
+      <div class="alert-item"><div class="alert-dot"></div>
+      <div><span style="color:#d04848;font-weight:700;">Q${q.id}</span>（${ratings[q.id]}点）${q.text}</div></div>`).join('');
+  } else card.style.display='none';
+}
+
+// ===================================================
+// COACH NOTES
+// ===================================================
+function buildCoachNotes(scores) {
+  const sorted = axes.map(ax=>({...ax,score:scores[ax.key]})).sort((a,b)=>b.score-a.score);
+  const avg = sorted.reduce((s,ax)=>s+ax.score,0)/axes.length;
+
+  const summary = avg<2
+    ? '全体的に比較的安定した状態です。ただし、高スコアの項目は先手を打った対処が有効です。'
+    : avg<3
+    ? 'いくつかの領域で負担が蓄積しています。放置すると判断精度に影響が出てきます。今の段階で整えると変化が出やすいタイミングです。'
+    : '複数の領域で負担が出ています。身体の不良債権が判断精度を削っている可能性が高い状態です。整えることで本来のパフォーマンスを取り戻しやすい段階です。';
+
+  const interps = {
+    recovery:  {low:'回復力は比較的維持されています。',mid:'回復に少し時間がかかるサインが出ています。蓄積している状態です。',high:'回復の土台に負担がかかっています。睡眠と腸の状態を優先的に確認してください。'},
+    digestion: {low:'消化器系は比較的安定しています。',mid:'食後のパフォーマンス低下が判断精度に影響し始めています。',high:'消化器系の負担が判断精度に直接影響しています。ハーブファスティングによる腸のリセットが有効な状態です。'},
+    brain:     {low:'思考・集中力は比較的維持されています。',mid:'情報処理にコストがかかり始めています。夕方以降の集中力低下が出やすい状態です。',high:'脳疲労により本来の思考速度・集中力が出にくい状態です。脳のデトックスが優先課題です。'},
+    judgment:  {low:'判断精度は比較的安定しています。',mid:'決断の迷いや焦りが出やすい状態です。',high:'意思決定の質に直接影響が出ています。身体のノイズを取り除くことが急務です。'},
+    autonomic: {low:'自律神経は比較的安定しています。',mid:'気を張りすぎる・休んでも抜けきらない状態が出ています。',high:'自律神経の乱れが回復と判断の両方を圧迫しています。'},
+    timing:    {low:'今は比較的フローに乗れている感覚があります。',mid:'流れとのズレを感じているサインが出ています。',high:'今は攻めよりも整えを優先すべき時期のサインが出ています。'},
+  };
+  const gi = (key,s)=>{ const i=interps[key]; return s<2?i.low:s<3.5?i.mid:i.high; };
+
+  const top=sorted[0], sec=sorted[1];
+  const combos = {
+    'recovery+digestion':'回復力と消化器系の両方に負荷がかかっています。腸をリセットし、回復の土台を作ることが最初のステップです。',
+    'recovery+brain':'回復できないまま脳を使い続けている状態です。',
+    'recovery+judgment':'疲労が判断精度を直撃しています。本来の意思決定力を取り戻すには、まず回復の土台が必要です。',
+    'digestion+brain':'腸と脳のつながり（腸脳軸）に負荷がかかっています。消化器のリセットが脳のクリア感に直結します。',
+    'digestion+judgment':'食後のパフォーマンス低下が、重要な判断のタイミングと重なっている可能性があります。',
+    'brain+judgment':'思考と判断の両方にノイズが入っています。脳疲労をリセットすることで本来の精度が戻りやすい状態です。',
+    'autonomic+timing':'自律神経の乱れが流れとのズレを生んでいます。整える時期と攻める時期の見極めが今は特に重要です。',
+  };
+  const tp = top.score>=3
+    ? (combos[`${top.key}+${sec.key}`]||combos[`${sec.key}+${top.key}`]||`特に「${top.label}」と「${sec.label}」への対処が優先度高です。`)
+    : '今はまだ余裕がある段階です。予防的なメンテナンスを始めるには良いタイミングです。';
+
+  const highAxes = sorted.filter(ax=>ax.score>=3);
+  let blocks = highAxes.map(ax=>`
+    <div class="coach-block">
+      <div class="coach-block-lbl">${ax.label}（スコア ${ax.score.toFixed(1)}）</div>
+      <div class="coach-block-text">${gi(ax.key,ax.score)}</div>
+    </div>`).join('') || `<div class="coach-block"><div class="coach-block-text">現時点では全軸で比較的安定しています。</div></div>`;
+
+  document.getElementById('coachContent').innerHTML = `
+    <div class="coach-block"><div class="coach-block-lbl">総評</div><div class="coach-block-text">${summary}</div></div>
+    ${blocks}
+    <div class="coach-block"><div class="coach-block-lbl">コーチへの示唆（会話の入口）</div><div class="coach-block-text">${tp}</div></div>`;
+}
+
+// ===================================================
+// FOCUS & FREETEXT
+// ===================================================
+function buildFocus() {
+  const checks = [...document.querySelectorAll('.check-list input:checked')];
+  const card = document.getElementById('focusCard');
+  if (checks.length) {
+    card.style.display='block';
+    document.getElementById('focusTags').innerHTML = checks.map(c=>`<div class="focus-tag">${c.value}</div>`).join('');
+  } else card.style.display='none';
+}
+function buildFreeText() {
+  const ft1=document.getElementById('ft1').value.trim();
+  const ft2=document.getElementById('ft2').value.trim();
+  const card=document.getElementById('ftCard');
+  if (ft1||ft2) {
+    card.style.display='block';
+    let h='';
+    if(ft1) h+=`<div class="ft-display-q">今、一番整えたいこと</div><div class="ft-display-a">${ft1}</div>`;
+    if(ft2) h+=`<div class="ft-display-q">半年後の理想状態</div><div class="ft-display-a">${ft2}</div>`;
+    document.getElementById('ftDisplay').innerHTML=h;
+  } else card.style.display='none';
+}
+
+// ===================================================
+// RESET
+// ===================================================
+function resetForm() {
+  questions.forEach(q=>{ratings[q.id]=null;});
+  document.querySelectorAll('.r-btn').forEach(b=>b.classList.remove('sel','sel-high','sel-crit'));
+  document.querySelectorAll('.q-row').forEach(r=>r.classList.remove('unanswered'));
+  document.querySelectorAll('.check-list input').forEach(c=>c.checked=false);
+  document.querySelectorAll('.text-input').forEach(i=>{ i.value=''; i.classList.remove('error'); });
+  document.getElementById('ft1').value='';
+  document.getElementById('ft2').value='';
+  document.getElementById('meetingDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('valAlert').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('survey').style.display='block';
+  window.scrollTo(0,0);
+  updateProgress();
+}
+
+// ===================================================
+// INIT
+// ===================================================
+// Add progress bar HTML
+const container = document.querySelector('.container');
+const progressHTML = document.createElement('div');
+progressHTML.innerHTML = '<div class="progress-label">回答済み 0 / 18</div><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>';
+container.insertBefore(progressHTML, container.firstChild);
+
+document.getElementById('clientName').addEventListener('input', function(){ this.classList.remove('error'); });
+</script>
+</body>
+</html>
