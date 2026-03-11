@@ -172,10 +172,12 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
   border-left: 2px solid var(--red);
   padding: 14px 16px;
 }
-.bottleneck-neg-title { font-size: 10px; color: var(--red); font-weight: 700; margin-bottom: 10px; letter-spacing: 0.1em; }
-.bottleneck-neg-text { font-size: 12px; color: #c8a8a8; line-height: 1.9; }
-/* 後方互換（印刷時の blur 解除は不要になったが念のため残す） */
-.bottleneck-blur-text { font-size: 12px; line-height: 1.8; }
+.bottleneck-neg-title { font-size: 10px; color: var(--red); font-weight: 700; margin-bottom: 12px; letter-spacing: 0.1em; }
+.bottleneck-neg-intro { font-size: 12px; color: #c8a8a8; line-height: 1.9; margin-bottom: 14px; }
+.neg-timeline { display: flex; flex-direction: column; gap: 12px; }
+.neg-step { display: flex; gap: 12px; align-items: flex-start; }
+.neg-step-label { font-size: 10px; color: var(--red); font-weight: 700; white-space: nowrap; min-width: 72px; padding-top: 3px; letter-spacing: 0.05em; }
+.neg-step-text { font-size: 12px; color: #c8a8a8; line-height: 1.85; }
 
 /* CTA card */
 .cta-card {
@@ -393,14 +395,6 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
     <div id="s5-questions"></div>
   </div>
 
-  <!-- FREE TEXT -->
-  <div class="card">
-    <div class="card-header"><div class="card-tag">FREE</div><div class="card-title">自由記述</div></div>
-    <div class="ft-label">今、仕事・投資・人生全体で一番整えたいことは何ですか？</div>
-    <textarea class="ft-area" id="ft1" placeholder="自由にご記入ください"></textarea>
-    <div class="ft-label">「本来の自分」が100%出せている状態とは、どんな状態ですか？</div>
-    <textarea class="ft-area" id="ft2" placeholder="自由にご記入ください"></textarea>
-  </div>
 
   <div class="val-alert" id="valAlert"></div>
   <button class="analyze-btn" onclick="analyze()">現状分析を見る →</button>
@@ -469,11 +463,6 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
     <div class="tag-row" id="focusTags"></div>
   </div>
 
-  <div class="info-card" id="ftCard" style="display:none;">
-    <div class="info-title">FREE TEXT — 記述回答</div>
-    <div id="ftDisplay"></div>
-  </div>
-
   <div class="action-row">
     <button class="btn-primary" onclick="window.print()">PDFをダウンロード（印刷）</button>
     <button class="btn-secondary" onclick="resetForm()">← 最初からやり直す</button>
@@ -532,15 +521,21 @@ const questions = [
   // Section 1: 追加回復力問い
   { id:29, s:1, text:'週末にしっかり休んでも、月曜朝に「まだ疲れが残っている」と感じることが多い' },
   { id:30, s:1, text:'以前なら1〜2日で回復していた疲れが、今は3〜4日以上かかる感覚がある' },
+  { id:31, s:1, text:'朝、鏡を見た時に「老けた」「くすんだ」と感じることが以前より増えた' },
+  // Section 2: 追加判断精度問い
+  { id:32, s:2, text:'以前は直感で「これだ」と即決できたことが、今は確認・熟慮の時間が増えた' },
+  // Section 4: 追加臓器負荷問い
+  { id:33, s:4, text:'夕方以降、右肩から背中にかけての張りや重さを感じることがある' },
+  { id:34, s:4, text:'以前より寒がりになった、または下半身の冷えや足のだるさが気になる' },
 ];
 
 const axes = [
-  { key:'recovery',  label:'回復力',     qs:[1,5,29,30] },
+  { key:'recovery',  label:'回復力',     qs:[1,5,29,30,31] },
   { key:'digestion', label:'腸',         qs:[2,11,15] },
-  { key:'liver',     label:'肝臓',       qs:[16,17,23,24] },
-  { key:'kidney',    label:'腎臓',       qs:[18,19,25,26] },
+  { key:'liver',     label:'肝臓',       qs:[16,17,23,24,33] },
+  { key:'kidney',    label:'腎臓',       qs:[18,19,25,26,34] },
   { key:'brain',     label:'脳・集中',   qs:[3,4,8] },
-  { key:'judgment',  label:'判断精度',   qs:[6,7,9,10] },
+  { key:'judgment',  label:'判断精度',   qs:[6,7,9,10,32] },
   { key:'autonomic', label:'自律神経',   qs:[12,13,14] },
   { key:'timing',    label:'タイミング', qs:[20,21,22,27,28] },
 ];
@@ -649,7 +644,6 @@ function analyze() {
   buildBottleneck(scores);
   buildCoachNotes(scores);
   buildFocus();
-  buildFreeText();
   saveToSupabase(name, date, scores);
 }
 
@@ -773,21 +767,64 @@ function buildBottleneck(scores) {
     autonomic: '「頑張れているのに、なぜか抜けない」「眠れているのに疲れが取れない」。自律神経の乱れは、意志や根性では解決できません。身体の設計図レベルからの調整が必要です。',
     timing:    '努力しているのに結果が出ない時期は、「バイオリズムの裏の波」に入っている可能性があります。攻めるべき時期と整えるべき時期を正確に読むことが、今もっとも重要なスキルです。',
   };
-  const negSims = {
-    recovery:  'この消耗ペースを放置すると、1〜2年以内に「頑張っているのに成果が出ない」という慢性的な空回り状態が固定化します。回復力が底をつくと、重要な判断を下す場面でのミスが増え始め、そのミス一回分が数年分の損失になる可能性があります。さらに放置すると、身体が強制停止を選ぶ——検査数値に異常が出る前に、先手を打つことが最大のリスクヘッジです。',
-    digestion: '腸内環境の劣化は「消化の不調」では終わりません。慢性炎症が全身に広がり、午後の思考力・感情の安定・睡眠の質すべてを同時に損ないます。このまま続くと、大切な商談や意思決定の場面で「なぜかいつもより判断が鈍い」という状態が常態化します。10年後には、腸内環境と脳の認知機能の劣化が同時進行するリスクがあります。',
-    liver:     '肝臓の解毒能力が限界を超えると、処理しきれなかった毒素が血流に乗り脳に届きます。これがブレインフォグ（頭の霧）と慢性倦怠の正体です。放置すると思考の切れ・感情のコントロール・睡眠の深さが同時に劣化します。投資・経営判断の精度に直接影響が出始め、「あの時なぜあの判断をしたのか」という後悔が増えていきます。',
-    kidney:    '腎疲労が固定化すると、どれだけ眠っても回復しない「根の疲れ」が定着します。ホルモンバランスの乱れ・気力の枯渇・骨密度の低下が重なり、「気持ちはあるが身体がついてこない」という状態が年々強くなります。このまま10年が経過すると、同年代との体力・判断力・集中力の差が顕著になってきます。',
-    brain:     '脳疲労の蓄積を放置すると、短期記憶の低下・反応速度の鈍化・感情コントロールの困難化が段階的に進みます。「以前の自分ならすぐ気づけたはずのこと」を見落とすようになり、判断ミスが増えます。さらに長期化すると、認知症リスクの早期化につながる可能性が医学的にも指摘されています。今がターニングポイントです。',
-    judgment:  '判断精度の低下を放置すると、撤退すべき案件に留まる・入るべきタイミングを逃す・不要なリスクを取るという損失が静かに積み重なります。問題は「知識や情報が足りない」のではなく、「ハードウェアが劣化している」ことです。このまま1〜2年が経過すると、取り返しのつかない判断ミスを一度は経験することになります。',
-    autonomic: '自律神経の乱れが固定化すると、睡眠障害・高血圧・消化器疾患のリスクが上がり、医療機関のお世話になる可能性が高まります。さらに深刻なのは、自律神経の乱れは「メンタルの弱さ」ではなく「身体の構造的な問題」であるため、意志の力では改善しないことです。無理に頑張り続けることで、ある日突然ガクッと落ちる「崖」が近づいています。',
-    timing:    'バイオリズムの裏の波に逆らって攻め続けると、努力が空回りするだけでなく、身体の消耗が加速します。「なぜ結果が出ないのか」がわからないまま消耗し続けることで、自己評価が下がり、判断に迷いが出始めます。最悪のシナリオは、本来「攻めの波」が来たタイミングで身体が動けない状態になっていることです。',
+  const timelines = {
+    recovery: [
+      '慢性的な消耗が蓄積し、週の後半に「動けない日」が増えます。重要な打ち合わせや判断の質が、曜日によって大きくムラが出始めます。',
+      '回復力の低下が固定化し、以前なら1日で抜けた疲れが1週間残るようになります。「本調子の日」が月に数日しかない状態が続きます。身体が無意識にセーブモードに入り、攻めの決断ができなくなっていきます。',
+      '副腎疲労・慢性疲労症候群として医療機関の診断が出る可能性が高まります。仕事のパフォーマンスが構造的に低下し、周囲にも気づかれるようになります。今の10倍の時間とコストをかけなければ、元の状態には戻れません。',
+    ],
+    digestion: [
+      '食後の集中力低下が習慣化し、重要な午後の判断・商談・会議で「頭が重い状態」が週3〜4日になります。「食後は仕方ない」と諦めてしまうようになります。',
+      '腸内環境の悪化が免疫・睡眠・気分に波及し、「なんとなく調子が悪い日」が常態化します。肌荒れ・アレルギー・気分の落ち込みが慢性化し、原因がわからないまま体調管理のコストが増え続けます。',
+      '腸の慢性炎症が全身炎症に発展するリスクが上がります。腸脳軸の劣化により、うつ傾向・認知機能の低下が出始め、投資・経営の判断精度に取り返しのつかない影響が出る可能性があります。',
+    ],
+    liver: [
+      '解毒が追いつかず毒素が血流に乗り始めます。頭のクリア感がなくなり、ブレインフォグ（思考の霧）を慢性的に感じるようになります。重要な判断の場面で「なんか今日は頭が重い」という日が増えます。',
+      '目の充血・肌のくすみ・慢性的な倦怠感が定着します。飲酒や脂っこい食事への耐性が大きく落ち、翌日のパフォーマンスに毎回影響が出ます。「以前は大丈夫だったのに」という場面が増えてきます。',
+      '血液検査でγ-GTP・ALT・ASTの数値悪化が顕在化します。脂肪肝・肝機能障害への移行リスクが高まり、医療的介入が必要になります。肝臓は「沈黙の臓器」と呼ばれ、症状が出た時点ではすでに深刻です。',
+    ],
+    kidney: [
+      'むくみと腰の重さが慢性化し、朝の立ち上がりが辛くなります。冷えが強まり、集中力が出るまでに時間がかかるようになります。「午前中は使い物にならない」という日が増えてきます。',
+      'ホルモンバランスの乱れが加速し、意欲の低下・睡眠の浅さ・体力の明らかな衰えを感じるようになります。「気持ちはあるのに身体がついてこない」という感覚が定着し、行動力が落ちていきます。',
+      '腎機能の数値悪化・血圧上昇・骨密度の低下が出始めます。腎臓は一度機能が落ちると回復が非常に難しい臓器です。生涯の医療管理コストが大幅に上がり、生活の質そのものが変わってきます。',
+    ],
+    brain: [
+      '短期記憶のミス・名前が出てこない・話の途中で迷子になるといった「脳の引っかかり」が増えてきます。「最近物忘れが多い」と感じ始めます。',
+      '情報処理速度の低下が顕著になり、同じ資料を読んでも理解に時間がかかるようになります。重要な判断に自信が持てなくなり、決断を先延ばしにするクセがつきます。',
+      '認知機能の早期低下リスクが同年代より高くなります。一度低下した神経の接続を取り戻すには、数年単位の本格的な介入が必要です。「あの頃の頭のキレ」は、放置するほど遠ざかります。',
+    ],
+    judgment: [
+      '大事な場面ほど「なんか違う気がする」という違和感が増えます。決断に時間がかかり、後から後悔するケースが増えてきます。「あの時すぐ動けばよかった」という場面が積み重なります。',
+      '判断ミスの積み重ねが顕在化します。撤退すべき案件に留まる・入るべきタイミングを逃す・不要なリスクを取るという損失が静かに蓄積されます。1〜2年で見ると、判断精度の差は大きな収益差になります。',
+      '重要な局面での致命的な判断ミスを経験する可能性が高まります。問題は「情報や知識が足りない」のではなく、「ハードウェアが劣化している」ことです。ハードを整えない限り、どれだけ勉強しても根本解決にはなりません。',
+    ],
+    autonomic: [
+      '眠れているのに疲れが取れない・緊張が抜けない状態が定常化します。週明けから既に「消耗している」感覚で始まり、エネルギーを使う前から消耗しています。',
+      '不眠・高血圧・消化器症状が重なり始めます。ストレス耐性が低下し、以前なら気にならなかったことで体調が崩れやすくなります。医療費・サプリ代が増えても、根本が変わらないループに入ります。',
+      '自律神経の乱れが固定化し、意志の力では改善しない構造的な不調に移行します。内科・心療内科・循環器科など複数の医療機関のお世話になるリスクが高まります。ある日突然「ガクッと落ちる」前に手を打つことが必要です。',
+    ],
+    timing: [
+      '努力しているのに結果が出ない「空回り期」が長引きます。「なぜうまくいかないのか」がわからないまま消耗が続き、自信が少しずつ削られていきます。',
+      '攻めるべき波が来ても身体が動けない状態が続き、チャンスを掴みそこねる経験が増えます。自己評価の低下と判断への迷いが重なり、リスクを取れない体質になっていきます。',
+      '本来のリズムを完全に見失い、「あの頃の自分」に戻れない感覚が定着します。身体の波を無視した行動は、ビジネスの波への乗り遅れとして、数年単位で周囲との差を生み出します。',
+    ],
   };
+
+  const tl = timelines[top.key];
+  const intro = (top.score >= 3 && sec.score >= 2.5)
+    ? `特に「<strong style="color:#e08080">${top.label}</strong>」と「<strong style="color:#e08080">${sec.label}</strong>」に同時に負荷がかかっているあなたの場合、このまま放置した場合の影響は複合的に広がります。`
+    : `「<strong style="color:#e08080">${top.label}</strong>」に最も大きな負荷がかかっているあなたの場合、このまま放置すると以下のように進行します。`;
 
   document.getElementById('bottleneckTitle').innerHTML =
     `あなたのコア・アセットを最も侵食している<br><span>「${top.label}」</span>の問題`;
   document.getElementById('bottleneckBody').textContent = bodies[top.key] || '';
-  document.getElementById('bottleneckNegText').textContent = negSims[top.key] || '';
+  document.getElementById('bottleneckNegText').innerHTML = `
+    <p class="bottleneck-neg-intro">${intro}</p>
+    <div class="neg-timeline">
+      <div class="neg-step"><div class="neg-step-label">▸ 6ヶ月後</div><div class="neg-step-text">${tl[0]}</div></div>
+      <div class="neg-step"><div class="neg-step-label">▸ 1〜2年後</div><div class="neg-step-text">${tl[1]}</div></div>
+      <div class="neg-step"><div class="neg-step-label">▸ 3〜5年後</div><div class="neg-step-text">${tl[2]}</div></div>
+    </div>`;
 }
 
 // ===================================================
@@ -854,18 +891,6 @@ function buildFocus() {
     document.getElementById('focusTags').innerHTML=checks.map(c=>`<div class="focus-tag">${c.value}</div>`).join('');
   } else card.style.display='none';
 }
-function buildFreeText() {
-  const ft1=document.getElementById('ft1').value.trim();
-  const ft2=document.getElementById('ft2').value.trim();
-  const card=document.getElementById('ftCard');
-  if(ft1||ft2){
-    card.style.display='block';
-    let h='';
-    if(ft1) h+=`<div class="ft-display-q">今、一番整えたいこと</div><div class="ft-display-a">${ft1}</div>`;
-    if(ft2) h+=`<div class="ft-display-q">「本来の自分」が100%出ている状態</div><div class="ft-display-a">${ft2}</div>`;
-    document.getElementById('ftDisplay').innerHTML=h;
-  } else card.style.display='none';
-}
 
 // ===================================================
 // SAVE
@@ -882,8 +907,6 @@ async function saveToSupabase(name, date, scores) {
       client_email:document.getElementById('clientEmail').value.trim()||null,
       client_job:document.getElementById('clientJob').value.trim()||null,
       answers:ratings, scores, focuses,
-      free_text1:document.getElementById('ft1').value,
-      free_text2:document.getElementById('ft2').value,
     });
     if(error) throw error;
     banner.className='send-banner ok'; banner.textContent='✓ データをアドバイザーに送信しました';
@@ -903,7 +926,6 @@ function resetForm() {
   document.querySelectorAll('.q-row').forEach(r=>r.classList.remove('unanswered'));
   document.querySelectorAll('.check-list input').forEach(c=>c.checked=false);
   document.querySelectorAll('.text-input').forEach(i=>{ i.value=''; i.classList.remove('error'); });
-  document.getElementById('ft1').value=''; document.getElementById('ft2').value='';
   document.getElementById('meetingDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('valAlert').style.display='none';
   document.getElementById('results').style.display='none';
