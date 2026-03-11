@@ -362,6 +362,25 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
     <div class="card-header">
       <div class="card-tag">SECTION 4</div>
       <div>
+        <div class="card-title">臓器負荷サイン（肝臓・腎臓）</div>
+        <div class="card-sub">パフォーマンスを陰で支える解毒・排泄系の状態</div>
+      </div>
+    </div>
+    <div class="scale-header-row">
+      <div class="spacer"></div>
+      <div class="scale-labels">
+        <div class="scale-lbl">0</div><div class="scale-lbl">1</div><div class="scale-lbl">2</div>
+        <div class="scale-lbl">3</div><div class="scale-lbl">4</div><div class="scale-lbl">5</div>
+      </div>
+    </div>
+    <div id="s4-questions"></div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-tag">SECTION 5</div>
+      <div>
         <div class="card-title">バイオリズム・波の同期状態</div>
         <div class="card-sub">今の自分の「流れ」との同期度を測定します</div>
       </div>
@@ -373,7 +392,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
         <div class="scale-lbl">3</div><div class="scale-lbl">4</div><div class="scale-lbl">5</div>
       </div>
     </div>
-    <div id="s4-questions"></div>
+    <div id="s5-questions"></div>
   </div>
 
   <!-- FREE TEXT -->
@@ -501,19 +520,35 @@ const questions = [
   { id:13, s:3, text:'肩・首のこりや頭の重さを、毎日のように感じている' },
   { id:14, s:3, text:'仕事が終わっても頭が「オフ」にならず、なかなかリラックスできない' },
   { id:15, s:3, text:'会食や会議、人と会った翌日は、普段より疲労感が強い' },
-  // Section 4: バイオリズム
-  { id:16, s:4, text:'「攻めたい」という気持ちはあるが、身体がその速度についてこられていない感覚がある' },
-  { id:17, s:4, text:'一生懸命やっているのに、なぜか流れに乗れていない時期が続いている' },
-  { id:18, s:4, text:'「一度しっかりリセットすれば、次のステージに行ける」という直感がある' },
+  // Section 4: 臓器負荷サイン（肝臓・腎臓）
+  { id:16, s:4, text:'右脇腹（肋骨の下あたり）に重さや違和感を感じることがある' },
+  { id:17, s:4, text:'油っこい食事や飲酒の翌日、普段より倦怠感や頭の重さが強く出る' },
+  { id:18, s:4, text:'朝起きた時、顔・手・足にむくみを感じることがある' },
+  { id:19, s:4, text:'腰や背中の下部に、鈍い重さや疲れを慢性的に感じている' },
+  { id:23, s:4, text:'目の疲れ・乾き・充血が慢性的に続いている気がする' },
+  { id:24, s:4, text:'肌の黄ばみ、くすみ、または吹き出物・かゆみが出やすい' },
+  { id:25, s:4, text:'耳鳴り、耳の詰まり感、または声がかすれやすいことがある' },
+  { id:26, s:4, text:'夜間に何度かトイレに行く、または尿の色が濃い・泡立ちが気になる' },
+  // Section 5: バイオリズム
+  { id:20, s:5, text:'「攻めたい」という気持ちはあるが、身体がその速度についてこられていない感覚がある' },
+  { id:21, s:5, text:'一生懸命やっているのに、なぜか流れに乗れていない時期が続いている' },
+  { id:22, s:5, text:'「一度しっかりリセットすれば、次のステージに行ける」という直感がある' },
+  { id:27, s:5, text:'「今すぐ動かなければ」という焦りと「いや、まだ待て」という感覚が同時に来て混乱する' },
+  { id:28, s:5, text:'良いチャンスだとわかっているのに、身体の重さや疲れで乗り切れなかった経験がある' },
+  // Section 1: 追加回復力問い
+  { id:29, s:1, text:'週末にしっかり休んでも、月曜朝に「まだ疲れが残っている」と感じることが多い' },
+  { id:30, s:1, text:'以前なら1〜2日で回復していた疲れが、今は3〜4日以上かかる感覚がある' },
 ];
 
 const axes = [
-  { key:'recovery',  label:'回復力',     qs:[1,5] },
-  { key:'digestion', label:'消化・腸',   qs:[2,11,15] },
+  { key:'recovery',  label:'回復力',     qs:[1,5,29,30] },
+  { key:'digestion', label:'腸',         qs:[2,11,15] },
+  { key:'liver',     label:'肝臓',       qs:[16,17,23,24] },
+  { key:'kidney',    label:'腎臓',       qs:[18,19,25,26] },
   { key:'brain',     label:'脳・集中',   qs:[3,4,8] },
   { key:'judgment',  label:'判断精度',   qs:[6,7,9,10] },
   { key:'autonomic', label:'自律神経',   qs:[12,13,14] },
-  { key:'timing',    label:'タイミング', qs:[16,17,18] },
+  { key:'timing',    label:'タイミング', qs:[20,21,22,27,28] },
 ];
 
 const ratings = {};
@@ -540,6 +575,7 @@ buildSection(1,'s1-questions');
 buildSection(2,'s2-questions');
 buildSection(3,'s3-questions');
 buildSection(4,'s4-questions');
+buildSection(5,'s5-questions');
 document.getElementById('meetingDate').value = new Date().toISOString().split('T')[0];
 
 // ===================================================
@@ -726,6 +762,8 @@ function buildBottleneck(scores) {
   const titles = {
     recovery:  '回復力の枯渇が、すべてのパフォーマンスの土台を侵食しています',
     digestion: '消化器系のノイズが、脳への血流と判断精度を直撃しています',
+    liver:     '肝臓への負荷が、解毒機能と脳のクリア感を同時に奪っています',
+    kidney:    '腎臓への慢性的な負担が、根本的な回復力とエネルギー産生を下げています',
     brain:     '脳疲労の蓄積が、本来の思考速度とキレを奪っています',
     judgment:  '意思決定の処理系に深刻な負荷がかかっています',
     autonomic: '自律神経の乱れが、回復と判断の両方を圧迫しています',
@@ -734,6 +772,8 @@ function buildBottleneck(scores) {
   const bodies = {
     recovery:  '高性能なエンジン（脳・思考）に対して、ラジエーター（回復力）が機能不全を起こしています。このまま走り続けると、もっとも大事な局面で完全停止するリスクがあります。',
     digestion: '食後のパフォーマンス低下は「意志の弱さ」ではありません。腸内の炎症と毒素の蓄積が、脳への情報伝達を物理的に遅らせている状態です。消化の問題は、判断精度の問題です。',
+    liver:     '肝臓は1日に1,500リットルの血液を解毒するフィルターです。このフィルターが詰まると、毒素が血流に乗って脳まで届き、判断力の鈍化・倦怠感・目の疲れとして表面化します。頑張れているのに抜けきらない感覚の多くは、肝臓が発している「限界サイン」です。',
+    kidney:    '腎臓は生命エネルギー（精）を貯蔵する臓器です。腎疲労が蓄積すると、どれだけ眠っても回復しない、腰が重い、むくみが取れないという慢性パターンが定着します。これは「根の力」の枯渇サインです。',
     brain:     '「わかっているのに動けない」「本来の自分ならもっとキレがあるはず」という感覚は、脳疲労のサインです。知識やスキルの問題ではなく、ハードウェア側の問題です。',
     judgment:  '待つべき場面で焦る、動くべき場面で鈍る——この逆転は、身体のノイズが脳の判断系を侵食しているサインです。知識があっても、ハードが劣化していれば正しい判断は出せません。',
     autonomic: '「頑張れているのに、なぜか抜けない」「眠れているのに疲れが取れない」。自律神経の乱れは、意志や根性では解決できません。身体の設計図レベルからの調整が必要です。',
@@ -742,6 +782,8 @@ function buildBottleneck(scores) {
   const blurTexts = {
     recovery:  '回復力低下の根本原因は○○にある。最優先で行うべき処置は△△。次の「フルパワーで動ける時期」は……',
     digestion: '腸内環境の具体的な劣化パターンと、それが判断精度に与えている影響の詳細。最短でリセットするための処方箋は……',
+    liver:     '肝臓の解毒フィルターが詰まっているパターンの正体と、Artémisのハーブ成分がどう作用するか。クリアになるまでの期間と体感の変化は……',
+    kidney:    '腎の疲弊パターンとあなたの体質の関係。エネルギーの根を回復させるための優先順位と、最短アプローチは……',
     brain:     '脳疲労の蓄積源は○○。細胞レベルでのリセットに要する期間と、その間の意思決定のリスク管理方法は……',
     judgment:  '判断精度を下げているボトルネックの正体。ピンポイントで除去した場合、判断スピードが戻るまでの期間と具体的な方法は……',
     autonomic: '自律神経の乱れのパターンと、あなたの生体設計図との関係。最も効果的な調整方法と、本来のリズムを取り戻す期間は……',
@@ -768,8 +810,10 @@ function buildCoachNotes(scores) {
     : '複数の領域で負担が出ています。身体の不良債権が判断精度を削っている可能性が高い状態です。';
 
   const interps = {
-    recovery: {low:'回復力は比較的維持されています。',mid:'回復に時間がかかり始めています。蓄積している状態です。',high:'ハードウェアの回復機能に深刻な負荷。睡眠と腸の状態を優先的に確認してください。'},
+    recovery: {low:'回復力は比較的維持されています。',mid:'回復に時間がかかり始めています。蓄積している状態です。',high:'ハードウェアの回復機能に深刻な負荷。睡眠と腸・肝臓の状態を優先的に確認してください。'},
     digestion:{low:'消化器系は比較的安定しています。',mid:'食後のパフォーマンス低下が判断精度に影響し始めています。',high:'腸内の炎症が脳への情報伝達を遅らせています。ハーブファスティングによる腸のリセットが有効な状態です。'},
+    liver:    {low:'肝臓は比較的安定しています。',mid:'肝臓に負荷が蓄積し始めています。目の疲れや翌日の倦怠感が続く場合は、解毒サポートが有効です。',high:'肝臓の解毒フィルターに深刻な負荷がかかっています。毒素の蓄積が脳のクリア感・判断精度を直撃している可能性が高い状態です。Artémisによるリセットを優先提案してください。'},
+    kidney:   {low:'腎臓は比較的安定しています。',mid:'腎疲労の蓄積サインが出ています。むくみや腰の重さが続く場合は、腎臓へのケアを加えることを提案してください。',high:'腎臓の慢性疲弊が根本的な回復力を低下させています。どれだけ休んでも抜けきらない疲労の根本原因である可能性があります。'},
     brain:    {low:'思考・集中力は比較的維持されています。',mid:'情報処理にコストがかかり始めています。',high:'脳疲労により本来の判断速度・集中力が出にくい状態です。デトックスが優先課題です。'},
     judgment: {low:'判断精度は比較的安定しています。',mid:'決断の迷いや焦りが出やすい状態です。',high:'意思決定の質に直接影響が出ています。身体のノイズを先に取り除くことが急務です。'},
     autonomic:{low:'自律神経は比較的安定しています。',mid:'気を張りすぎる・休んでも抜けきらない状態が出ています。',high:'自律神経の乱れが回復と判断の両方を圧迫しています。'},
@@ -779,12 +823,16 @@ function buildCoachNotes(scores) {
 
   const top=sorted[0], sec=sorted[1];
   const combos={
-    'recovery+digestion':'回復力と消化器系の両方に負荷がかかっています。腸をリセットし、回復の土台を作ることが最初のステップです。',
+    'recovery+digestion':'回復力と腸の両方に負荷がかかっています。腸をリセットし、回復の土台を作ることが最初のステップです。',
+    'recovery+liver':'回復力と肝臓に同時に負荷がかかっています。肝臓の解毒力が落ちると回復にも時間がかかります。ハーブファスティングで両方を同時にリセットできます。',
+    'liver+kidney':'肝腎の両方に負荷がかかっています。これは東洋医学でいう「解毒と排泄の詰まり」の状態です。根本的なリセットが必要です。',
+    'liver+digestion':'腸と肝臓の両方に問題があります。「腸→肝臓→血流→脳」というルートで判断精度を下げている可能性があります。ハーブファスティングで腸肝サイクルをリセットすることが最優先です。',
     'recovery+brain':'回復できないまま脳を使い続けている状態です。休んでも頭が冴えない感覚がある方が多い状態です。',
     'digestion+brain':'腸脳軸に負荷がかかっています。消化器のリセットが脳のクリア感に直結します。',
     'brain+judgment':'思考と判断の両方にノイズが入っています。脳疲労をリセットすることで本来の精度が戻りやすい状態です。',
     'recovery+judgment':'疲労が判断精度を直撃しています。回復の土台なしに判断精度は上がりません。',
     'autonomic+timing':'自律神経の乱れが流れとのズレを生んでいます。整える時期と攻める時期の見極めが今は特に重要です。',
+    'kidney+timing':'腎疲労による根力の低下が、波に乗り切れない感覚を生んでいます。腎のケアで底力が戻ります。',
   };
   const tp=top.score>=3?(combos[`${top.key}+${sec.key}`]||combos[`${sec.key}+${top.key}`]||`特に「${top.label}」と「${sec.label}」への対処が優先度高です。`):'今はまだ余裕がある段階です。予防的なメンテナンスを始めるには良いタイミングです。';
 
@@ -874,7 +922,7 @@ function resetForm() {
 // ===================================================
 const cont=document.querySelector('.container');
 const pb=document.createElement('div');
-pb.innerHTML='<div class="progress-label">回答済み 0 / 18</div><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>';
+pb.innerHTML=`<div class="progress-label">回答済み 0 / ${questions.length}</div><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>`;
 cont.insertBefore(pb,cont.firstChild);
 document.getElementById('clientName').addEventListener('input',function(){this.classList.remove('error');});
 </script>
