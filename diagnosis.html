@@ -166,18 +166,16 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .bottleneck-title { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.5; margin-bottom: 12px; }
 .bottleneck-title span { color: var(--gold); }
 .bottleneck-body { font-size: 12px; color: var(--text-muted); line-height: 1.9; margin-bottom: 16px; }
-.bottleneck-blur {
-  background: rgba(180,150,80,0.06);
-  border: 1px dashed rgba(180,150,80,0.3);
+.bottleneck-neg-sim {
+  background: rgba(208,72,72,0.06);
+  border: 1px solid rgba(208,72,72,0.25);
+  border-left: 2px solid var(--red);
   padding: 14px 16px;
-  border-radius: 2px;
-  position: relative;
 }
-.bottleneck-blur-title { font-size: 10px; color: var(--gold); font-weight: 700; margin-bottom: 8px; letter-spacing: 0.08em; }
-.bottleneck-blur-text { font-size: 12px; color: rgba(221,226,240,0.35); line-height: 1.8; filter: blur(3px); user-select: none; }
-.bottleneck-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; }
-.bottleneck-lock-icon { font-size: 20px; }
-.bottleneck-lock-text { font-size: 11px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; }
+.bottleneck-neg-title { font-size: 10px; color: var(--red); font-weight: 700; margin-bottom: 10px; letter-spacing: 0.1em; }
+.bottleneck-neg-text { font-size: 12px; color: #c8a8a8; line-height: 1.9; }
+/* 後方互換（印刷時の blur 解除は不要になったが念のため残す） */
+.bottleneck-blur-text { font-size: 12px; line-height: 1.8; }
 
 /* CTA card */
 .cta-card {
@@ -453,13 +451,9 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
     <div class="bottleneck-tag">BOTTLENECK ANALYSIS</div>
     <div class="bottleneck-title" id="bottleneckTitle"></div>
     <div class="bottleneck-body" id="bottleneckBody"></div>
-    <div class="bottleneck-blur">
-      <div class="bottleneck-blur-title">ボトルネックの正体 ／ 処方箋</div>
-      <div class="bottleneck-blur-text" id="bottleneckBlurText"></div>
-      <div class="bottleneck-lock">
-        <div class="bottleneck-lock-icon">🔒</div>
-        <div class="bottleneck-lock-text">第二回セッションで解析・開示</div>
-      </div>
+    <div class="bottleneck-neg-sim">
+      <div class="bottleneck-neg-title">このまま放置した場合のシミュレーション</div>
+      <div class="bottleneck-neg-text" id="bottleneckNegText"></div>
     </div>
   </div>
 
@@ -664,8 +658,8 @@ function analyze() {
 // ===================================================
 function buildAssetStatus(scores) {
   const avg = Object.values(scores).reduce((a,b)=>a+b,0)/axes.length;
-  // 平均1.5を「70点」、平均2.5を「50点」として感度を上げる
-  const pct = Math.max(10, Math.round(100 - avg * 22));
+  // avg 1.5→65点、avg 2.0→55点、avg 2.5→45点に収まるよう調整
+  const pct = Math.max(42, Math.round(95 - avg * 20));
   const c = getColor(avg);
 
   const circle = document.getElementById('assetCircle');
@@ -779,21 +773,21 @@ function buildBottleneck(scores) {
     autonomic: '「頑張れているのに、なぜか抜けない」「眠れているのに疲れが取れない」。自律神経の乱れは、意志や根性では解決できません。身体の設計図レベルからの調整が必要です。',
     timing:    '努力しているのに結果が出ない時期は、「バイオリズムの裏の波」に入っている可能性があります。攻めるべき時期と整えるべき時期を正確に読むことが、今もっとも重要なスキルです。',
   };
-  const blurTexts = {
-    recovery:  '回復力低下の根本原因は○○にある。最優先で行うべき処置は△△。次の「フルパワーで動ける時期」は……',
-    digestion: '腸内環境の具体的な劣化パターンと、それが判断精度に与えている影響の詳細。最短でリセットするための処方箋は……',
-    liver:     '肝臓の解毒フィルターが詰まっているパターンの正体と、Artémisのハーブ成分がどう作用するか。クリアになるまでの期間と体感の変化は……',
-    kidney:    '腎の疲弊パターンとあなたの体質の関係。エネルギーの根を回復させるための優先順位と、最短アプローチは……',
-    brain:     '脳疲労の蓄積源は○○。細胞レベルでのリセットに要する期間と、その間の意思決定のリスク管理方法は……',
-    judgment:  '判断精度を下げているボトルネックの正体。ピンポイントで除去した場合、判断スピードが戻るまでの期間と具体的な方法は……',
-    autonomic: '自律神経の乱れのパターンと、あなたの生体設計図との関係。最も効果的な調整方法と、本来のリズムを取り戻す期間は……',
-    timing:    'あなたのバイオリズムにおける現在の位置。次の「攻めの波」が来るタイミングと、今すべき準備の詳細は……',
+  const negSims = {
+    recovery:  'この消耗ペースを放置すると、1〜2年以内に「頑張っているのに成果が出ない」という慢性的な空回り状態が固定化します。回復力が底をつくと、重要な判断を下す場面でのミスが増え始め、そのミス一回分が数年分の損失になる可能性があります。さらに放置すると、身体が強制停止を選ぶ——検査数値に異常が出る前に、先手を打つことが最大のリスクヘッジです。',
+    digestion: '腸内環境の劣化は「消化の不調」では終わりません。慢性炎症が全身に広がり、午後の思考力・感情の安定・睡眠の質すべてを同時に損ないます。このまま続くと、大切な商談や意思決定の場面で「なぜかいつもより判断が鈍い」という状態が常態化します。10年後には、腸内環境と脳の認知機能の劣化が同時進行するリスクがあります。',
+    liver:     '肝臓の解毒能力が限界を超えると、処理しきれなかった毒素が血流に乗り脳に届きます。これがブレインフォグ（頭の霧）と慢性倦怠の正体です。放置すると思考の切れ・感情のコントロール・睡眠の深さが同時に劣化します。投資・経営判断の精度に直接影響が出始め、「あの時なぜあの判断をしたのか」という後悔が増えていきます。',
+    kidney:    '腎疲労が固定化すると、どれだけ眠っても回復しない「根の疲れ」が定着します。ホルモンバランスの乱れ・気力の枯渇・骨密度の低下が重なり、「気持ちはあるが身体がついてこない」という状態が年々強くなります。このまま10年が経過すると、同年代との体力・判断力・集中力の差が顕著になってきます。',
+    brain:     '脳疲労の蓄積を放置すると、短期記憶の低下・反応速度の鈍化・感情コントロールの困難化が段階的に進みます。「以前の自分ならすぐ気づけたはずのこと」を見落とすようになり、判断ミスが増えます。さらに長期化すると、認知症リスクの早期化につながる可能性が医学的にも指摘されています。今がターニングポイントです。',
+    judgment:  '判断精度の低下を放置すると、撤退すべき案件に留まる・入るべきタイミングを逃す・不要なリスクを取るという損失が静かに積み重なります。問題は「知識や情報が足りない」のではなく、「ハードウェアが劣化している」ことです。このまま1〜2年が経過すると、取り返しのつかない判断ミスを一度は経験することになります。',
+    autonomic: '自律神経の乱れが固定化すると、睡眠障害・高血圧・消化器疾患のリスクが上がり、医療機関のお世話になる可能性が高まります。さらに深刻なのは、自律神経の乱れは「メンタルの弱さ」ではなく「身体の構造的な問題」であるため、意志の力では改善しないことです。無理に頑張り続けることで、ある日突然ガクッと落ちる「崖」が近づいています。',
+    timing:    'バイオリズムの裏の波に逆らって攻め続けると、努力が空回りするだけでなく、身体の消耗が加速します。「なぜ結果が出ないのか」がわからないまま消耗し続けることで、自己評価が下がり、判断に迷いが出始めます。最悪のシナリオは、本来「攻めの波」が来たタイミングで身体が動けない状態になっていることです。',
   };
 
   document.getElementById('bottleneckTitle').innerHTML =
     `あなたのコア・アセットを最も侵食している<br><span>「${top.label}」</span>の問題`;
   document.getElementById('bottleneckBody').textContent = bodies[top.key] || '';
-  document.getElementById('bottleneckBlurText').textContent = blurTexts[top.key] || '';
+  document.getElementById('bottleneckNegText').textContent = negSims[top.key] || '';
 }
 
 // ===================================================
