@@ -112,15 +112,24 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .alert-item { display: flex; gap: 8px; margin-bottom: 6px; font-size: 11px; color: var(--text); line-height: 1.5; align-items: flex-start; }
 .alert-dot { width: 5px; height: 5px; background: var(--red); border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
 
-.coach-block { margin-bottom: 12px; }
+.coach-block { margin-bottom: 10px; }
 .coach-block:last-child { margin-bottom: 0; }
 .coach-block-lbl { font-size: 9px; color: var(--gold); font-weight: 700; letter-spacing: 0.08em; margin-bottom: 5px; }
 .coach-block-text { font-size: 11px; color: var(--text); line-height: 1.9; background: rgba(255,255,255,0.025); padding: 9px 12px; border-left: 2px solid var(--gold); }
 
+/* コーチ専用：効果的な切り口ブロック */
+.coach-tip-block { margin-bottom: 14px; background: rgba(80,120,200,0.06); border: 1px solid rgba(80,120,200,0.2); border-left: 2px solid #5080c8; padding: 10px 13px; }
+.coach-tip-lbl { font-size: 9px; color: #7898d8; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 8px; }
+.coach-tip-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.coach-tip-list li { font-size: 11px; color: #b0bcd8; line-height: 1.75; padding-left: 12px; position: relative; }
+.coach-tip-list li::before { content: '▸'; position: absolute; left: 0; color: #7898d8; }
+
+/* コーチ専用：提案タイミングブロック */
+.coach-artemis-block { margin-bottom: 10px; background: rgba(180,150,80,0.07); border: 1px solid rgba(180,150,80,0.3); border-left: 2px solid var(--gold); padding: 10px 13px; }
+.coach-artemis-lbl { font-size: 9px; color: var(--gold); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 6px; }
+.coach-artemis-text { font-size: 11px; color: #c8b878; line-height: 1.85; }
+
 .focus-tag { font-size: 11px; background: var(--gold-dim); border: 1px solid var(--gold); color: var(--gold); padding: 3px 10px; display: inline-block; margin: 3px 4px 3px 0; }
-.ft-q { font-size: 10px; color: var(--text-muted); margin-top: 12px; margin-bottom: 5px; }
-.ft-q:first-child { margin-top: 0; }
-.ft-a { font-size: 11px; color: var(--text); line-height: 1.8; background: rgba(255,255,255,0.025); padding: 8px 12px; border-left: 2px solid var(--gold); white-space: pre-wrap; min-height: 40px; }
 
 .loading { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 12px; }
 
@@ -225,15 +234,9 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
         <div id="dCoachContent"></div>
       </div>
 
-      <div class="two-col">
-        <div class="panel-card" id="dFocusPanel" style="display:none;">
-          <div class="panel-card-title">TODAY'S FOCUS</div>
-          <div id="dFocusTags"></div>
-        </div>
-        <div class="panel-card" id="dFtPanel" style="display:none;">
-          <div class="panel-card-title">FREE TEXT — 記述回答</div>
-          <div id="dFtContent"></div>
-        </div>
+      <div class="panel-card" id="dFocusPanel" style="display:none;">
+        <div class="panel-card-title">TODAY'S FOCUS</div>
+        <div id="dFocusTags"></div>
       </div>
 
     </div>
@@ -254,39 +257,65 @@ let db = null;
 // AXES & QUESTIONS
 // ===================================================
 const axes = [
-  { key:'recovery',  label:'回復力',     qs:[1,5] },
-  { key:'digestion', label:'消化・腸',   qs:[2,11,15] },
-  { key:'brain',     label:'脳・集中',   qs:[3,4,8] },
-  { key:'judgment',  label:'判断精度',   qs:[6,7,9,10] },
-  { key:'autonomic', label:'自律神経',   qs:[12,13,14] },
-  { key:'timing',    label:'タイミング', qs:[16,17,18] },
+  { key:'recovery',  label:'回復力',     qs:[1,5,29,30,31,37] },
+  { key:'digestion', label:'腸',         qs:[2,11,15,41] },
+  { key:'liver',     label:'肝臓',       qs:[16,17,23,24,33,38,39] },
+  { key:'kidney',    label:'腎臓',       qs:[18,19,25,26,34,40] },
+  { key:'brain',     label:'脳・集中',   qs:[3,4,8,36] },
+  { key:'judgment',  label:'判断精度',   qs:[6,7,9,10,32] },
+  { key:'autonomic', label:'自律神経',   qs:[12,13,14,35] },
+  { key:'timing',    label:'タイミング', qs:[20,21,22,27,28,42] },
 ];
 const questions = [
-  {id:1, text:'朝起きた時点で、すでに疲れが残っている感じがある'},
-  {id:2, text:'食後に眠気や頭の重さが出やすい'},
-  {id:3, text:'夕方以降、思考のキレが落ちやすい'},
-  {id:4, text:'忙しい時ほど、集中力が続きにくい'},
-  {id:5, text:'以前に比べて、回復に時間がかかるようになった'},
-  {id:6, text:'最近、決断に時間がかかることが増えた'},
-  {id:7, text:'本来なら待てる場面で焦りやすいと感じる'},
-  {id:8, text:'情報量が多い日ほど、頭が散りやすい'},
-  {id:9, text:'頭では分かっていても、身体がついてこない感覚がある'},
-  {id:10,text:'「本来の自分ならもっと冴えていたのに」と感じることがある'},
-  {id:11,text:'胃腸の重さ、もたれ、張りを感じることがある'},
-  {id:12,text:'睡眠の質に課題を感じる'},
-  {id:13,text:'首肩のこり、頭の重さ、目の疲れが出やすい'},
-  {id:14,text:'疲れているのに気が張って休まりにくい'},
-  {id:15,text:'人に会った後や会食の後に、必要以上に疲れやすい'},
-  {id:16,text:'今は攻めたい気持ちはあるが、土台が追いついていない感覚がある'},
-  {id:17,text:'動いてはいるが、流れが噛み合っていない感じがある'},
-  {id:18,text:'今ここで一度しっかり整えると、その後の伸びが変わる気がする'},
+  {id:1,  text:'睡眠時間は確保しているのに、午前中から本調子になるまで時間がかかる'},
+  {id:2,  text:'食後30〜60分、思考のスピードや集中力が明らかに落ちる時間帯がある'},
+  {id:3,  text:'午後3時以降、午前中と比べてパフォーマンスが落ちていると感じる'},
+  {id:4,  text:'週の後半（木・金）になると、週明けより明らかに消耗が大きい'},
+  {id:5,  text:'数年前と比べて、同じ量の仕事で疲れるスピードが速くなった'},
+  {id:6,  text:'重要な決断の前に、以前より時間をかけて考えるようになった'},
+  {id:7,  text:'「もう少し待つべき」とわかっていても、つい早く動きたくなることがある'},
+  {id:8,  text:'情報量が多い日の夜は、頭が整理しきれない感覚で眠りにつく'},
+  {id:9,  text:'「頭ではわかっている」のに、行動に移すまでに時間がかかることがある'},
+  {id:10, text:'数年前の自分と比べて、決断のキレや直感の精度が落ちた気がする'},
+  {id:11, text:'食後の胃の重さや膨満感を、「これが普通」として受け入れている'},
+  {id:12, text:'横になってもすぐ眠れない、または夜中・早朝に目が覚めることがある'},
+  {id:13, text:'肩・首のこりや頭の重さを、毎日のように感じている'},
+  {id:14, text:'仕事が終わっても頭が「オフ」にならず、なかなかリラックスできない'},
+  {id:15, text:'会食や会議、人と会った翌日は、普段より疲労感が強い'},
+  {id:16, text:'右脇腹（肋骨の下あたり）に重さや違和感を感じることがある'},
+  {id:17, text:'油っこい食事や飲酒の翌日、普段より倦怠感や頭の重さが強く出る'},
+  {id:18, text:'朝起きた時、顔・手・足にむくみを感じることがある'},
+  {id:19, text:'腰や背中の下部に、鈍い重さや疲れを慢性的に感じている'},
+  {id:20, text:'「攻めたい」という気持ちはあるが、身体がその速度についてこられていない感覚がある'},
+  {id:21, text:'一生懸命やっているのに、なぜか流れに乗れていない時期が続いている'},
+  {id:22, text:'「一度しっかりリセットすれば、次のステージに行ける」という直感がある'},
+  {id:23, text:'目の疲れ・乾き・充血が慢性的に続いている気がする'},
+  {id:24, text:'肌の黄ばみ、くすみ、または吹き出物・かゆみが出やすい'},
+  {id:25, text:'耳鳴り、耳の詰まり感、または声がかすれやすいことがある'},
+  {id:26, text:'夜間に何度かトイレに行く、または尿の色が濃い・泡立ちが気になる'},
+  {id:27, text:'「今すぐ動かなければ」という焦りと「いや、まだ待て」という感覚が同時に来て混乱する'},
+  {id:28, text:'良いチャンスだとわかっているのに、身体の重さや疲れで乗り切れなかった経験がある'},
+  {id:29, text:'週末にしっかり休んでも、月曜朝に「まだ疲れが残っている」と感じることが多い'},
+  {id:30, text:'以前なら1〜2日で回復していた疲れが、今は3〜4日以上かかる感覚がある'},
+  {id:31, text:'朝、鏡を見た時に「老けた」「くすんだ」と感じることが以前より増えた'},
+  {id:32, text:'以前は直感で「これだ」と即決できたことが、今は確認・熟慮の時間が増えた'},
+  {id:33, text:'夕方以降、右肩から背中にかけての張りや重さを感じることがある'},
+  {id:34, text:'以前より寒がりになった、または下半身の冷えや足のだるさが気になる'},
+  {id:35, text:'夢をよく見る、または夢の中から覚めるような浅い眠りが多い'},
+  {id:36, text:'スマホやPCを閉じた後も、情報や会話が頭の中でぐるぐると続いている'},
+  {id:37, text:'コーヒーや甘いものがないと午後を乗り越えられない、という感覚がある'},
+  {id:38, text:'特に何もしていないのに、夕方以降に急な眠気が来ることがある'},
+  {id:39, text:'以前より怒りやすくなった、またはイライラが抑えにくくなったと感じる'},
+  {id:40, text:'夜になると下半身がだるい・重い、または足のむくみが取れていない'},
+  {id:41, text:'食後にしばらく横になるか、ぼーっとしないと頭が働かない習慣がついた'},
+  {id:42, text:'「あの時すぐ動いていれば」という後悔が、過去1年で何度かある'},
 ];
 
 function getColor(s) {
-  if(s<2) return {cls:'c-green', fill:'f-green', label:'良好',   badge:'badge-green'};
-  if(s<3) return {cls:'c-yellow',fill:'f-yellow',label:'注意',   badge:'badge-yellow'};
-  if(s<4) return {cls:'c-orange',fill:'f-orange',label:'要対処', badge:'badge-orange'};
-  return       {cls:'c-red',   fill:'f-red',   label:'要即対応',badge:'badge-red'};
+  if(s<1.5) return {cls:'c-green', fill:'f-green', label:'良好',    badge:'badge-green'};
+  if(s<2.5) return {cls:'c-yellow',fill:'f-yellow',label:'注意',    badge:'badge-yellow'};
+  if(s<3.5) return {cls:'c-orange',fill:'f-orange',label:'要対処',  badge:'badge-orange'};
+  return          {cls:'c-red',   fill:'f-red',   label:'要即対応', badge:'badge-red'};
 }
 
 // ===================================================
@@ -499,15 +528,6 @@ function showDetail(id) {
     document.getElementById('dFocusTags').innerHTML = focuses.map(f=>`<span class="focus-tag">${f}</span>`).join('');
   } else document.getElementById('dFocusPanel').style.display='none';
 
-  // Free text
-  const ft1=d.free_text1||'', ft2=d.free_text2||'';
-  if (ft1||ft2) {
-    document.getElementById('dFtPanel').style.display='block';
-    let h='';
-    if(ft1) h+=`<div class="ft-q">今、一番整えたいこと</div><div class="ft-a">${ft1}</div>`;
-    if(ft2) h+=`<div class="ft-q">半年後の理想状態</div><div class="ft-a">${ft2}</div>`;
-    document.getElementById('dFtContent').innerHTML=h;
-  } else document.getElementById('dFtPanel').style.display='none';
 
   document.getElementById('detailPanel').style.display='block';
   document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -550,37 +570,163 @@ function buildDetailRadar(scores) {
 }
 
 // ===================================================
-// DETAIL COACH NOTES
+// DETAIL COACH NOTES（8軸・詳細アドバイス付き）
 // ===================================================
 function buildDetailCoach(scores, container) {
   const sorted = axes.map(ax=>({...ax,score:scores[ax.key]||0})).sort((a,b)=>b.score-a.score);
   const avg = sorted.reduce((s,ax)=>s+ax.score,0)/axes.length;
+  const pct = Math.max(42, Math.round(95 - avg * 20));
 
-  const summary = avg<2
-    ? '全体的に比較的安定した状態です。ただし、高スコアの項目は先手を打った対処が有効です。'
-    : avg<3
-    ? 'いくつかの領域で負担が蓄積しています。今の段階で整えると変化が出やすいタイミングです。'
-    : '複数の領域で負担が出ています。身体の不良債権が判断精度を削っている可能性が高い状態です。';
+  const summary = avg<1.5
+    ? `スコア ${pct}点。全軸で比較的安定しています。定期的なメンテナンスの観点から、予防的なご提案が自然です。`
+    : avg<2.5
+    ? `スコア ${pct}点。いくつかの領域で負荷の蓄積が見られます。「これが普通」と思い込んでいる劣化を丁寧に言語化することで、課題認識を高められます。`
+    : avg<3.5
+    ? `スコア ${pct}点。複数領域で明確な負荷が出ています。今の状態を放置するリスクを具体的に伝えると、行動動機が高まりやすいです。`
+    : `スコア ${pct}点。ほぼ全軸で深刻な負荷が出ています。今すぐ介入が必要な状態です。感情的にならず、事実として淡々と伝えることがポイントです。`;
 
   const interps = {
-    recovery: {low:'回復力は比較的維持されています。',mid:'回復に少し時間がかかるサインが出ています。',high:'回復の土台に負担がかかっています。睡眠と腸の状態を優先的に確認してください。'},
-    digestion:{low:'消化器系は比較的安定しています。',mid:'食後のパフォーマンス低下が判断精度に影響し始めています。',high:'ハーブファスティングによる腸のリセットが有効な状態です。'},
-    brain:    {low:'思考・集中力は比較的維持されています。',mid:'夕方以降の集中力低下が出やすい状態です。',high:'脳疲労により本来の思考速度・集中力が出にくい状態です。'},
-    judgment: {low:'判断精度は比較的安定しています。',mid:'決断の迷いや焦りが出やすい状態です。',high:'意思決定の質に直接影響が出ています。身体のノイズを取り除くことが急務です。'},
-    autonomic:{low:'自律神経は比較的安定しています。',mid:'気を張りすぎる・休んでも抜けきらない状態が出ています。',high:'自律神経の乱れが回復と判断の両方を圧迫しています。'},
-    timing:   {low:'今は比較的フローに乗れている感覚があります。',mid:'流れとのズレを感じているサインが出ています。',high:'今は攻めよりも整えを優先すべき時期のサインが出ています。'},
+    recovery: {
+      low:'回復力は比較的維持されています。ただし「今は良くても蓄積している」視点でお話しすると予防提案がしやすいです。',
+      mid:'回復に時間がかかり始めています。「週末休んでも月曜が辛い」感覚があるか確認してください。',
+      high:'回復機能が明確に低下しています。肝臓・腸・睡眠の3点セットで負荷が重なっている可能性が高いです。',
+    },
+    digestion: {
+      low:'消化器系は比較的安定しています。食後のパフォーマンスへの影響を聞いてみると課題が出てくることがあります。',
+      mid:'食後の集中力低下が判断精度に影響し始めています。「食後の眠気や頭の重さ」を具体的に確認してください。',
+      high:'腸内の炎症が脳への情報伝達を遅らせています。ハーブファスティングで腸をリセットすることが最も直接的なソリューションです。',
+    },
+    liver: {
+      low:'肝臓への負荷は現時点では低めです。飲酒・外食頻度を確認し、将来のリスクとしてお伝えするのが効果的です。',
+      mid:'肝臓に負荷が蓄積し始めています。「翌日の倦怠感」「目の疲れ」「夕方の眠気」のどれかが出ているか確認してください。',
+      high:'肝臓の解毒フィルターに深刻な負荷がかかっています。毒素が脳に到達してブレインフォグを引き起こしている可能性が高いです。Artémisのマリアアザミ・タンポポ根の説明に入るタイミングです。',
+    },
+    kidney: {
+      low:'腎臓への負荷は現時点では低めです。冷えや夜間のむくみがあるか確認し、将来リスクとして話す切り口があります。',
+      mid:'腎疲労のサインが出始めています。「夜に足がだるい」「腰の鈍い重さ」「以前より寒がり」になっていないか確認してください。',
+      high:'腎臓の慢性疲弊が根本的な回復力を低下させています。「どれだけ眠っても抜けない疲れ」の根本原因として説明できます。腎サポートのハーブ（ハトムギ・イラクサ）の説明に入るタイミングです。',
+    },
+    brain: {
+      low:'脳・集中力は比較的維持されています。「以前と比べた変化」を掘り下げると課題が出てくることがあります。',
+      mid:'情報処理コストが増えています。「PCを閉じても頭がぐるぐるする」「午後の頭の重さ」について確認してください。',
+      high:'脳疲労が本来の判断速度・集中力を大きく削っています。「知識の問題ではなくハードの問題」というフレームで説明すると腑に落ちやすいです。',
+    },
+    judgment: {
+      low:'判断精度は比較的安定しています。「数年前の自分と今の自分の差」を聞くと潜在的な課題が出てくることがあります。',
+      mid:'決断の迷い・焦りが出始めています。「以前は直感で決めていたのに今は迷う」経験を確認し、それが身体由来であることを説明してください。',
+      high:'意思決定の質に直接影響が出ています。投資・経営判断の精度低下として具体的な損失リスクを伝えると、行動意欲が高まりやすいです。',
+    },
+    autonomic: {
+      low:'自律神経は比較的安定しています。「疲れているのに頭が休まらない」感覚がないか確認してみてください。',
+      mid:'交感神経優位が続いています。「眠れているのに疲れが取れない」状態が続いているか確認し、自律神経とパフォーマンスの関係を説明してください。',
+      high:'自律神経の乱れが回復と判断の両方を圧迫しています。「意志の力では改善しない構造的な問題」というフレームで説明するのが有効です。',
+    },
+    timing: {
+      low:'バイオリズムは比較的フローに乗れている状態です。「次の波を最大限に活かす」視点で整えの提案ができます。',
+      mid:'流れとのズレのサインが出ています。「一生懸命やっているのに結果が出ない」感覚があるか確認し、バイオリズムの概念を紹介してください。',
+      high:'今は明確に「整える時期」のサインが出ています。無理に攻め続けることのリスクを具体的に伝え、リセットの重要性を説明してください。',
+    },
   };
-  const gi=(key,s)=>{const i=interps[key];return s<2?i.low:s<3.5?i.mid:i.high;};
 
-  const top=sorted[0],sec=sorted[1];
-  const combos={'recovery+digestion':'回復力と消化器系の両方に負荷がかかっています。腸のリセットが最初のステップです。','digestion+brain':'腸と脳のつながりに負荷がかかっています。消化器のリセットが脳のクリア感に直結します。','brain+judgment':'思考と判断の両方にノイズが入っています。脳疲労のリセットで本来の精度が戻りやすい状態です。','autonomic+timing':'自律神経の乱れが流れとのズレを生んでいます。'};
-  const tp=top.score>=3?(combos[`${top.key}+${sec.key}`]||combos[`${sec.key}+${top.key}`]||`特に「${top.label}」と「${sec.label}」への対処が優先度高です。`):'今はまだ余裕がある段階です。予防的なメンテナンスを始めるには良いタイミングです。';
+  // 効果的な切り口（ここを言うと「おー」となる）
+  const talkingPoints = {
+    recovery: [
+      '「週末しっかり休んでも、月曜朝にまだ疲れていると感じませんか？」',
+      '「数年前と同じ量の仕事をして、疲れのスピードが変わった感覚はありますか？」',
+      '「コーヒーや甘いものがないと午後が乗り越えられない、ということはありますか？」',
+    ],
+    digestion: [
+      '「食後30〜60分、頭の重さや眠気が出やすいことはありますか？実はこれ、腸が脳に負担をかけているサインなんです。」',
+      '「会食の翌日って、普段より疲れが大きくないですか？」',
+      '「食後にしばらく横にならないと頭が動かない、という感覚はありますか？」',
+    ],
+    liver: [
+      '「右のわき腹あたりに、たまに重さや違和感を感じませんか？（肝臓の位置を示しながら）」',
+      '「お酒や脂っこい食事の翌日って、特にきつくなりましたか？以前と比べて。」',
+      '「夕方以降に、急に眠くなる時間帯はありますか？これ実は肝臓が出しているSOSサインなんですよ。」',
+      '「最近、目の疲れや乾きが気になっていませんか？肝臓は目に出やすい臓器なんです。」',
+    ],
+    kidney: [
+      '「夜になると足がだるくなったり、むくみが取れない感じはありますか？」',
+      '「腰の下の方に、慢性的な鈍い重さはありませんか？これ腎臓の疲れが出やすい場所なんです。」',
+      '「以前より寒がりになってきた、と感じることはありますか？」',
+      '「朝起きた時、顔や手にむくみを感じることはありますか？」',
+    ],
+    brain: [
+      '「PCやスマホを閉じた後も、頭の中でさっきの会議や情報がぐるぐると続くことはありますか？」',
+      '「以前は直感でパッと決められたのに、今は迷うことが増えたと感じませんか？」',
+      '「午前中と午後で、頭の切れ方が明らかに違う感覚はありますか？」',
+    ],
+    judgment: [
+      '「「頭ではわかっているのに、なぜかそう動けない」という感覚はありますか？」',
+      '「大事な場面ほど、余計なことが頭に浮かんで迷いが出る、ということはありますか？」',
+      '「数年前の自分と今の自分で、決断のスピードや自信に違いを感じますか？」',
+    ],
+    autonomic: [
+      '「疲れているのに、布団に入っても頭がオフにならないことはありますか？」',
+      '「夢をよく見る、または朝起きた時に「また夢を見ていた」という感じはありますか？」',
+      '「人と会った後や会議の後、必要以上にどっと疲れることはありますか？」',
+    ],
+    timing: [
+      '「一生懸命やっているのに、なんかうまく流れに乗れていないという感覚が続いていませんか？」',
+      '「「あの時すぐ動いていれば」という後悔が、最近何度かありましたか？」',
+      '「攻めたい気持ちはあるのに、なんか身体がついてこない感覚はありますか？」',
+    ],
+  };
 
-  const highAxes=sorted.filter(ax=>ax.score>=3);
-  let blocks=`<div class="coach-block"><div class="coach-block-lbl">総評</div><div class="coach-block-text">${summary}</div></div>`;
-  blocks+=highAxes.map(ax=>`<div class="coach-block"><div class="coach-block-lbl">${ax.label}（${ax.score.toFixed(1)}）</div><div class="coach-block-text">${gi(ax.key,ax.score)}</div></div>`).join('');
-  blocks+=`<div class="coach-block"><div class="coach-block-lbl">会話の入口</div><div class="coach-block-text">${tp}</div></div>`;
-  container.innerHTML=blocks;
+  // Artémis提案ガイド
+  const artemisGuide = {
+    liver:    'スコアが高い場合、Artémisのマリアアザミ・タンポポ根・ターメリックが肝臓の解毒サポートに特に有効であることをお伝えください。「まず肝臓のフィルターを洗浄してから、次の投資・判断に臨む」というフレームが刺さりやすいです。',
+    kidney:   'スコアが高い場合、ハトムギ・イラクサ・コーンシルクが腎臓サポートに有効です。「根の力を取り戻す」「下半身の詰まりを流す」という表現がイメージしやすいです。',
+    digestion:'腸スコアが高い場合、ハーブファスティングによる腸のリセットが最も直接的なソリューションです。「腸を整えると脳のクリア感が戻る」「食後の眠気がなくなる」という体感変化を具体的に伝えてください。',
+    brain:    '脳疲労が高い場合、「腸をリセットすると脳のクリア感が変わる」という腸脳軸の説明が有効です。デトックスで脳の霧が晴れる体感を持つ方が多いことをお伝えください。',
+    recovery: '回復力スコアが高い場合、ファスティング後の「回復力の変化」を体感として伝えることが有効です。「4日間で数年分の疲れがリセットされる」という表現が反応を得やすいです。',
+    judgment: '判断精度に課題がある場合、「身体のノイズが取れると直感が戻る」という説明が響きやすいです。Artémisのデトックス体験者の「思考がクリアになった」という声を引用してください。',
+    autonomic:'自律神経スコアが高い場合、ファスティング中の「交感神経の強制リセット」効果をお伝えください。「4日間、身体を休ませるだけで自律神経のバランスが戻る」という説明が有効です。',
+    timing:   'タイミングスコアが高い場合、「整えることで次の波が来た時に全力で乗れる」という視点でご提案ください。「今は整える時期という直感はありますよね？」と確認してから提案に入ると自然です。',
+  };
+
+  const gi = (key, s) => { const i = interps[key]; return s<1.5?i.low:s<3?i.mid:i.high; };
+  const top = sorted[0], sec = sorted[1];
+
+  // 総評
+  let html = `<div class="coach-block"><div class="coach-block-lbl">総評</div><div class="coach-block-text">${summary}</div></div>`;
+
+  // 高スコア軸の詳細（2.0以上を表示）
+  const highAxes = sorted.filter(ax => ax.score >= 2.0);
+  if (highAxes.length === 0) {
+    html += `<div class="coach-block"><div class="coach-block-text">現時点では全軸で安定しています。定期メンテナンスの観点からのご提案が自然な流れです。</div></div>`;
+  } else {
+    highAxes.forEach(ax => {
+      html += `
+        <div class="coach-block">
+          <div class="coach-block-lbl">${ax.label}（スコア ${ax.score.toFixed(1)}）</div>
+          <div class="coach-block-text">${gi(ax.key, ax.score)}</div>
+        </div>
+        <div class="coach-tip-block">
+          <div class="coach-tip-lbl">効果的な切り口（この一言が刺さる）</div>
+          <ul class="coach-tip-list">
+            ${(talkingPoints[ax.key]||[]).map(t=>`<li>${t}</li>`).join('')}
+          </ul>
+        </div>`;
+    });
+  }
+
+  // Artémis提案タイミング
+  const artKey = [top.key, sec.key].find(k => artemisGuide[k]) || top.key;
+  html += `
+    <div class="coach-artemis-block">
+      <div class="coach-artemis-lbl">Artémis 提案タイミング・フレーミング</div>
+      <div class="coach-artemis-text">${artemisGuide[artKey]||''}</div>
+    </div>`;
+
+  // 次のアクション提案
+  const nextAction = top.score >= 3
+    ? `最優先：「${top.label}」の改善。まずArtémisの4日間ファスティングで基礎を整えることを提案。第二回セッションで詳細プログラムの提示へ。`
+    : `予防的メンテナンスの観点から、Artémisを試してみることを提案。「今がメンテナンスの最良タイミング」というフレームで。`;
+  html += `<div class="coach-block"><div class="coach-block-lbl">次のアクション提案</div><div class="coach-block-text">${nextAction}</div></div>`;
+
+  container.innerHTML = html;
 }
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
