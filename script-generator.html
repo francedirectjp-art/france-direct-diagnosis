@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第2回面談スクリプト生成 | France Direct</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --gold: #b49650; --gold-light: #c8aa6e; --gold-dim: rgba(180,150,80,0.12);
+  --dark: #0a0a14; --dark2: #0e0e1e; --dark3: #141428;
+  --text: #dde2f0; --text-muted: #6878a0; --border: rgba(180,150,80,0.18);
+  --green: #4aaa70; --red: #d04848; --blue: #5080c8;
+}
+body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+.app-header { background: var(--dark2); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.app-header h1 { font-size: 12px; color: var(--gold); letter-spacing: 0.12em; font-weight: 700; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.coach-email { font-size: 10px; color: var(--text-muted); }
+.logout-btn { font-size: 10px; color: var(--text-muted); background: transparent; border: 1px solid var(--border); padding: 5px 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.logout-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+/* LOGIN */
+#loginView { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-box { width: 100%; max-width: 380px; background: var(--dark3); border: 1px solid var(--border); padding: 38px 30px; }
+.login-logo { font-size: 9px; color: var(--gold); letter-spacing: 0.22em; font-weight: 700; margin-bottom: 10px; }
+.login-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.login-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.7; }
+.login-label { font-size: 10px; color: var(--text-muted); margin-bottom: 5px; display: block; letter-spacing: 0.05em; }
+.login-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); padding: 11px 12px; font-size: 13px; font-family: inherit; margin-bottom: 14px; transition: border-color 0.15s; }
+.login-input:focus { outline: none; border-color: var(--gold); }
+.login-btn { width: 100%; background: var(--gold); color: var(--dark); border: none; padding: 15px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.08em; transition: background 0.2s; }
+.login-btn:hover { background: var(--gold-light); }
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.login-error { font-size: 11px; color: var(--red); margin-top: 12px; line-height: 1.6; min-height: 16px; }
+
+/* MAIN */
+#mainView { display: none; }
+.container { max-width: 880px; margin: 0 auto; padding: 24px 16px 100px; }
+
+/* ステップ */
+.steps { display: flex; margin-bottom: 28px; }
+.step { flex: 1; padding: 10px 8px; text-align: center; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; border: 1px solid var(--border); color: var(--text-muted); background: var(--dark3); border-right: none; line-height: 1.6; }
+.step:last-child { border-right: 1px solid var(--border); }
+.step.active { color: var(--gold); border-color: rgba(180,150,80,0.6); background: var(--gold-dim); }
+.step.done { color: var(--green); border-color: rgba(74,170,112,0.4); background: rgba(74,170,112,0.05); }
+
+/* カード */
+.card { background: var(--dark3); border: 1px solid var(--border); padding: 22px; margin-bottom: 16px; }
+.card-title { font-size: 10px; color: var(--gold); letter-spacing: 0.18em; font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.card-sub { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.85; }
+
+/* フィールド */
+.field { margin-bottom: 16px; }
+.field-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+.req { color: var(--red); margin-left: 2px; }
+.text-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text); padding: 10px 13px; font-size: 13px; font-family: inherit; transition: border-color 0.15s; }
+.text-input:focus { outline: none; border-color: var(--gold); }
+textarea.text-input { resize: vertical; line-height: 1.75; }
+
+/* ボタン */
+.btn { padding: 14px 24px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.08em; border: none; transition: all 0.2s; display: inline-block; }
+.btn-gold { background: var(--gold); color: var(--dark); width: 100%; margin-top: 8px; }
+.btn-gold:hover { background: var(--gold-light); }
+.btn-gold:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); font-size: 11px; padding: 9px 18px; }
+.btn-outline:hover { color: var(--text); border-color: var(--text-muted); }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+/* 出力カード */
+.out-card { background: var(--dark3); border: 1px solid var(--border); padding: 22px; margin-bottom: 16px; display: none; }
+.out-card.show { display: block; }
+.out-card-head { font-size: 10px; color: var(--gold); letter-spacing: 0.18em; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.out-text { font-size: 12.5px; color: var(--text); line-height: 2.05; white-space: pre-wrap; word-break: break-word; }
+.out-text.typing::after { content: '▌'; color: var(--gold); animation: blink 0.7s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+/* コピー */
+.copy-btn { font-size: 10px; color: var(--text-muted); background: transparent; border: 1px solid var(--border); padding: 4px 12px; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+.copy-btn:hover { color: var(--gold); border-color: var(--gold); }
+.copy-btn.ok { color: var(--green); border-color: var(--green); }
+
+/* 補足カード */
+.sup-card { background: rgba(180,150,80,0.06); border: 1px solid rgba(180,150,80,0.3); padding: 20px; margin-bottom: 16px; display: none; }
+.sup-card.show { display: block; }
+.sup-card-title { font-size: 10px; color: var(--gold); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 12px; }
+.choice-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.ch-btn { padding: 10px 18px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; border: 1px solid var(--border); background: transparent; color: var(--text-muted); transition: all 0.15s; line-height: 1.5; }
+.ch-btn:hover,.ch-btn.on { color: var(--gold); border-color: var(--gold); background: var(--gold-dim); }
+
+/* プログレス */
+.prog-wrap { height: 2px; background: rgba(180,150,80,0.12); margin: 8px 0 16px; overflow: hidden; }
+.prog-bar { height: 100%; background: var(--gold); width: 0; transition: width 2.5s linear; }
+.prog-msg { font-size: 11px; color: var(--text-muted); text-align: center; padding: 14px; letter-spacing: 0.05em; }
+
+/* エラー */
+.err { background: rgba(208,72,72,0.1); border: 1px solid rgba(208,72,72,0.4); color: var(--red); font-size: 11px; padding: 10px 14px; margin-bottom: 12px; line-height: 1.7; display: none; }
+.err.show { display: block; }
+
+/* スクリプト本文 */
+.script-card { background: var(--dark3); border: 1px solid var(--border); padding: 26px; margin-bottom: 16px; display: none; }
+.script-card.show { display: block; }
+.script-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.script-title { font-size: 16px; font-weight: 700; color: var(--gold); }
+.script-meta { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+.script-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.script-body { font-size: 13px; color: var(--text); line-height: 2.1; white-space: pre-wrap; word-break: break-word; }
+.script-body.typing::after { content: '▌'; color: var(--gold); animation: blink 0.7s infinite; }
+.char-count { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .app-header, .steps, #inputSection, .sup-card, .btn-row, .copy-btn, .btn-outline, .prog-wrap, .prog-msg { display: none !important; }
+  .out-card.show, .script-card.show { display: block !important; background: #fff !important; border: 1px solid #ccc !important; }
+  .out-text, .script-body { color: #000 !important; }
+  .out-card-head, .script-title, .script-meta { color: #333 !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>第2回面談スクリプト生成　|　France Direct</h1>
+  <div class="header-right">
+    <span class="coach-email" id="coachEmail"></span>
+    <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+  </div>
+</header>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginView">
+  <div class="login-box">
+    <div class="login-logo">FRANCE DIRECT</div>
+    <div class="login-title">コーチログイン</div>
+    <div class="login-sub">認証されたコーチのみアクセスできます</div>
+    <label class="login-label">メールアドレス</label>
+    <input class="login-input" type="email" id="loginEmail" placeholder="coach@example.com"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="login-label">パスワード</label>
+    <input class="login-input" type="password" id="loginPass" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">ログイン</button>
+    <div class="login-error" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div id="mainView">
+<div class="container">
+
+  <!-- ステップ -->
+  <div class="steps">
+    <div class="step active" id="s1">STEP 1<br>データ入力</div>
+    <div class="step" id="s2">STEP 2<br>クライアント分析</div>
+    <div class="step" id="s3">STEP 3<br>スクリプト生成</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="inputSection">
+    <div class="card">
+      <div class="card-title">STEP 1 — クライアントデータ入力</div>
+      <div class="card-sub">3項目を入力してください。情報が詳しいほどスクリプトの精度が上がります。</div>
+
+      <div class="field">
+        <label class="field-label">クライアント名（呼称）<span class="req">*</span></label>
+        <input class="text-input" type="text" id="clientName" placeholder="例：山田様、Aさん">
+      </div>
+
+      <div class="field">
+        <label class="field-label">第1回面談の文字起こし・メモ<span class="req">*</span></label>
+        <textarea class="text-input" id="transcript" style="min-height:220px;"
+          placeholder="第1回面談の内容をそのまま貼り付けてください。文字起こし・メモ・箇条書きなど形式は問いません。クライアントの発言、反応、気になったキーワードなど、できるだけ詳しく。"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">生年月日・出生地・現住所<span class="req">*</span></label>
+        <textarea class="text-input" id="biodata" style="min-height:80px;"
+          placeholder="例：1968年5月14日生まれ、千葉県旭市出身、現在東京都港区在住&#10;出生時刻がわかれば記載してください（より精度が上がります）"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">アンケート結果・体質パターン（任意）</label>
+        <textarea class="text-input" id="surveyData" style="min-height:100px;"
+          placeholder="diagnosis.htmlの結果から：体質パターン、スコア、ハイスコア項目などを貼り付けてください。なければ空欄で構いません。"></textarea>
+      </div>
+
+      <div class="err" id="inputErr"></div>
+      <button class="btn btn-gold" onclick="startAnalysis()">クライアントを分析する　→</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: 分析出力 -->
+  <div class="out-card" id="analysisCard">
+    <div class="out-card-head">
+      <span>STEP 2 — クライアント分析レポート</span>
+      <button class="copy-btn" id="acopy" onclick="doCopy('analysisOut','acopy')">コピー</button>
+    </div>
+    <div class="prog-msg" id="aProg">分析中... 30〜60秒ほどお待ちください</div>
+    <div class="prog-wrap"><div class="prog-bar" id="aBar"></div></div>
+    <div class="out-text" id="analysisOut"></div>
+  </div>
+
+  <!-- 補足・確認 -->
+  <div class="sup-card" id="supCard">
+    <div class="sup-card-title">分析内容をご確認ください。このままスクリプトを生成しますか？</div>
+    <div class="choice-row">
+      <button class="ch-btn" id="chOk" onclick="pickChoice('ok')">問題なし　→　スクリプト生成へ</button>
+      <button class="ch-btn" id="chSup" onclick="pickChoice('sup')">補足情報を追加してから生成</button>
+    </div>
+    <div id="supInput" style="display:none;">
+      <div class="field">
+        <label class="field-label">補足情報・修正点</label>
+        <textarea class="text-input" id="supText" style="min-height:100px;"
+          placeholder="例：以前に断食経験あり。価格感度は低め。夫も投資家で夫婦参加を検討中。第1回で「宮古島に行きたい」と言っていた。"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="genBtn" onclick="startScript()" style="display:none;">
+      トークスクリプトを生成する（10,000字）　→
+    </button>
+  </div>
+
+  <div class="err" id="scriptErr"></div>
+
+  <!-- STEP 3: スクリプト -->
+  <div class="script-card" id="scriptCard">
+    <div class="script-head">
+      <div>
+        <div class="script-title">第2回個別面談　トークスクリプト</div>
+        <div class="script-meta" id="scriptMeta"></div>
+      </div>
+      <div class="script-actions">
+        <button class="copy-btn" id="scopy" onclick="doCopy('scriptOut','scopy')">全文コピー</button>
+        <button class="copy-btn" onclick="window.print()">PDF保存</button>
+      </div>
+    </div>
+    <div class="prog-msg" id="sProg" style="display:none;">スクリプト生成中... 1〜2分かかります</div>
+    <div class="prog-wrap" id="sPbarWrap" style="display:none;"><div class="prog-bar" id="sBar"></div></div>
+    <div class="script-body" id="scriptOut"></div>
+    <div class="char-count" id="charCount"></div>
+  </div>
+
+  <!-- 再操作 -->
+  <div id="restartRow" style="display:none;">
+    <div class="btn-row">
+      <button class="btn-outline btn" onclick="restartAll()">← 最初からやり直す</button>
+      <button class="btn-outline btn" onclick="regenScript()">スクリプトを再生成</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════
+const SB_URL = 'https://fnzimwshyctxkxyzfkpv.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuemltd3NoeWN0eGt4eXpma3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0OTEsImV4cCI6MjA4ODU0NzQ5MX0.Yt1DjKFA8L7IlG8ap-cr0Cv3D2TlBKesu3SNnSjB_UU';
+let db, claudeKey = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  db = window.supabase.createClient(SB_URL, SB_KEY);
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) await showMain(session.user);
+  } catch(e) { console.error(e); }
+});
+
+// ═══════════════════════════════════
+// AUTH
+// ═══════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  const btn   = document.getElementById('loginBtn');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'メールとパスワードを入力してください'; return; }
+  btn.disabled = true; btn.textContent = '認証中...';
+  try {
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+    if (error) { errEl.textContent = 'ログイン失敗: ' + error.message; btn.disabled=false; btn.textContent='ログイン'; }
+    else await showMain(data.user);
+  } catch(e) { errEl.textContent = '通信エラー: ' + e.message; btn.disabled=false; btn.textContent='ログイン'; }
+}
+
+async function showMain(user) {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('mainView').style.display  = 'block';
+  document.getElementById('coachEmail').textContent  = user.email;
+
+  // SupabaseのsettingsテーブルからClaudeキー取得
+  try {
+    const { data, error } = await db.from('settings').select('value').eq('key','claude_api_key').single();
+    if (!error && data) claudeKey = data.value;
+    else console.warn('Claudeキー取得失敗:', error?.message);
+  } catch(e) { console.warn('settings fetch error:', e); }
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  claudeKey = null;
+  document.getElementById('mainView').style.display  = 'none';
+  document.getElementById('loginView').style.display = 'flex';
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginBtn').textContent = 'ログイン';
+  document.getElementById('loginPass').value = '';
+  restartAll();
+}
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let analysisText = '', clientNameVal = '';
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('s'+i);
+    el.className = 'step' + (i<n?' done':i===n?' active':'');
+  });
+}
+
+// ═══════════════════════════════════
+// STEP 1 → 分析
+// ═══════════════════════════════════
+async function startAnalysis() {
+  const name = document.getElementById('clientName').value.trim();
+  const tr   = document.getElementById('transcript').value.trim();
+  const bio  = document.getElementById('biodata').value.trim();
+  const sv   = document.getElementById('surveyData').value.trim();
+  const errEl= document.getElementById('inputErr');
+  errEl.classList.remove('show');
+
+  if (!name) { showErr(errEl,'クライアント名を入力してください。'); return; }
+  if (!tr)   { showErr(errEl,'第1回面談の文字起こし・メモを入力してください。'); return; }
+  if (!bio)  { showErr(errEl,'生年月日・出生地・現住所を入力してください。'); return; }
+  if (!claudeKey) {
+    showErr(errEl,'Claudeキーが設定されていません。管理者にお問い合わせください。\n（Supabase → settings テーブルに claude_api_key を登録してください）');
+    return;
+  }
+
+  clientNameVal = name;
+  setStep(2);
+  document.getElementById('inputSection').style.display = 'none';
+  const card = document.getElementById('analysisCard');
+  card.classList.add('show');
+  document.getElementById('analysisOut').textContent = '';
+  fakeProgress('aBar', 45);
+
+  try {
+    analysisText = await streamClaude(
+      claudeKey,
+      buildAnalysisSys(),
+      buildAnalysisUser(name, tr, bio, sv),
+      'analysisOut', 6000
+    );
+    document.getElementById('aProg').style.display = 'none';
+    document.getElementById('analysisOut').classList.remove('typing');
+    const sup = document.getElementById('supCard');
+    sup.classList.add('show');
+    sup.scrollIntoView({ behavior:'smooth', block:'start' });
+  } catch(e) {
+    document.getElementById('aProg').textContent = '⚠ エラー: ' + e.message;
+    document.getElementById('aProg').style.color = 'var(--red)';
+  }
+}
+
+// ═══════════════════════════════════
+// 補足選択
+// ═══════════════════════════════════
+function pickChoice(c) {
+  document.getElementById('chOk').classList.toggle('on', c==='ok');
+  document.getElementById('chSup').classList.toggle('on', c==='sup');
+  document.getElementById('supInput').style.display = c==='sup' ? 'block' : 'none';
+  document.getElementById('genBtn').style.display = 'block';
+}
+
+// ═══════════════════════════════════
+// STEP 2 → スクリプト生成
+// ═══════════════════════════════════
+async function startScript() {
+  const sup   = document.getElementById('supText').value.trim();
+  const errEl = document.getElementById('scriptErr');
+  errEl.classList.remove('show');
+  if (!claudeKey) { showErr(errEl,'Claudeキーが見つかりません。'); return; }
+
+  setStep(3);
+  document.getElementById('supCard').style.display = 'none';
+
+  const sc = document.getElementById('scriptCard');
+  sc.classList.add('show');
+  document.getElementById('scriptOut').textContent = '';
+  document.getElementById('charCount').textContent = '';
+  document.getElementById('sProg').style.display = 'block';
+  document.getElementById('sPbarWrap').style.display = 'block';
+  fakeProgress('sBar', 85);
+  sc.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  const d = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('scriptMeta').textContent = `${clientNameVal} 様　|　生成日：${d}`;
+
+  try {
+    const result = await streamClaude(
+      claudeKey,
+      buildScriptSys(),
+      buildScriptUser(clientNameVal, analysisText, sup),
+      'scriptOut', 16000
+    );
+    document.getElementById('sProg').style.display = 'none';
+    document.getElementById('sPbarWrap').style.display = 'none';
+    document.getElementById('scriptOut').classList.remove('typing');
+    const len = result.replace(/\s/g,'').length;
+    document.getElementById('charCount').textContent = `総文字数：約 ${len.toLocaleString()} 字`;
+    document.getElementById('restartRow').style.display = 'block';
+  } catch(e) {
+    showErr(errEl, '⚠ スクリプト生成エラー: ' + e.message);
+    document.getElementById('sProg').style.display = 'none';
+  }
+}
+
+async function regenScript() {
+  document.getElementById('scriptOut').textContent = '';
+  document.getElementById('charCount').textContent = '';
+  document.getElementById('restartRow').style.display = 'none';
+  await startScript();
+}
+
+// ═══════════════════════════════════
+// CLAUDE STREAMING
+// ═══════════════════════════════════
+async function streamClaude(key, system, user, targetId, maxTokens) {
+  const el = document.getElementById(targetId);
+  el.classList.add('typing');
+  el.textContent = '';
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-6',
+      max_tokens: maxTokens,
+      stream: true,
+      system,
+      messages: [{ role:'user', content:user }]
+    })
+  });
+
+  if (!resp.ok) {
+    const e = await resp.json().catch(()=>({ error:{ message: resp.statusText } }));
+    throw new Error(e.error?.message || resp.statusText);
+  }
+
+  const reader = resp.body.getReader();
+  const dec    = new TextDecoder();
+  let full = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const lines = dec.decode(value).split('\n').filter(l=>l.startsWith('data: '));
+    for (const line of lines) {
+      const json = line.slice(6).trim();
+      if (json === '[DONE]') break;
+      try {
+        const d = JSON.parse(json);
+        if (d.type==='content_block_delta' && d.delta?.text) {
+          full += d.delta.text;
+          el.textContent = full;
+          el.scrollIntoView({ block:'end' });
+        }
+      } catch {}
+    }
+  }
+  return full;
+}
+
+// ═══════════════════════════════════
+// SYSTEM PROMPTS
+// ═══════════════════════════════════
+function buildAnalysisSys() {
+  return `あなたはFrance Direct（代表・織田剛）の専属セールスストラテジストです。
+ハーブファスティング「Artémis」および個別バイオリズム鑑定書の成約に特化した、
+第2回個別面談のためのクライアント深層分析を行います。
+
+分析は6軸で行い、後続のトークスクリプト生成に直接使える実践的な情報を出力してください。
+推測・仮説には「※」を付けて確定情報と区別してください。`;
+}
+
+function buildAnalysisUser(name, tr, bio, sv) {
+  return `以下のデータを基に、${name}様の詳細分析レポートを作成してください。
+
+━━━━━━━━━━━━━━━━━━━━
+【第1回面談データ】
+━━━━━━━━━━━━━━━━━━━━
+${tr}
+
+━━━━━━━━━━━━━━━━━━━━
+【生年月日・出生地・現住所】
+━━━━━━━━━━━━━━━━━━━━
+${bio}
+
+━━━━━━━━━━━━━━━━━━━━
+【アンケート・体質パターンデータ】
+━━━━━━━━━━━━━━━━━━━━
+${sv || '（データなし）'}
+
+━━━━━━━━━━━━━━━━━━━━
+【出力形式】
+━━━━━━━━━━━━━━━━━━━━
+
+═══════════════════════════════════════
+【クライアント分析レポート】${name}様
+═══════════════════════════════════════
+
+【1. 痛みと願望の構造】
+▸ 表層の悩み（本人が口にしていること）：
+▸ 深層の願望（本当に手に入れたいもの）：
+▸ 根底にある恐怖（失いたくないもの）：
+▸ 過去に試みた解決策とその結果：
+
+【2. 心理プロファイル】
+▸ 意思決定タイプ：（直感型 / 論理型 / 承認欲求型 / 慎重型 から選択し理由も記載）
+▸ 第1回面談で感情的に反応したキーワード：「○○」「○○」「○○」
+▸ 注意すべき心理的傾向：
+▸ ラポール構築の鍵：
+
+【3. セールス上のリスク分析】
+▸ 最大の成約障壁：
+▸ 副次的なリスク：
+▸ 第1回面談で残った「宿題」（言えなかったこと・避けた話題）：
+▸ 競合・代替手段への言及：
+
+【4. バイオリズム・占星術の読み取り】
+▸ 現在のフェーズ：（攻める時期 / 整える時期 / 転換点）
+▸ 体質パターン：（肝臓負荷型 / 腎臓疲弊型 / 腸脳軸型 / 脳神経過負荷型 など）
+▸ 現在の星の動きとの関係：
+▸ 今後の重要な転換点：（年・季節レベルで）
+▸ 「今がベストタイミング」の根拠：
+
+【5. 響くフレームとキーワード】
+▸ この人に最も刺さる「天国絵図」（理想の未来の情景）：
+▸ この人に最も刺さる「地獄絵図」（放置した場合の具体的シナリオ）：
+▸ 比喩・たとえ話のアイデア（本人の言葉・経験を使う）：
+▸ スクリプトで必ず使うべきキーワード：「○○」「○○」「○○」「○○」
+
+【6. 成約シナリオ設計】
+▸ 推奨プラン：松（最上位）/ 竹（中位）/ 梅（下位）＋理由
+▸ 最適なクロージングタイミング（何分頃・どの話題の後）：
+▸ 最も有力な反論と先回りフレーズ：
+▸ 「YES」を積み上げる質問の順番（6回以上）：
+
+═══════════════════════════════════════
+【コーチへの注意事項】
+（このクライアントと話す際に特に気をつけること）
+═══════════════════════════════════════`;
+}
+
+function buildScriptSys() {
+  return `あなたはFrance Direct（代表・織田剛）の専属トークスクリプト作成者です。
+ハーブファスティング「Artémis」と個別バイオリズム鑑定書の成約を目的とした
+第2回個別面談の完全トークスクリプトを作成します。
+
+必ず守るルール：
+1. 総文字数10,000字以上（前半・後半それぞれ4,500字以上）
+2. 分析レポートのクライアント固有情報を随所に織り込む
+3. 各フェーズに【目的】【所要時間目安】【対象別言い換え例】を明記
+4. 合計6回以上のYES積み上げを構造的に設計する
+5. コーチが実際に話す自然な口語体で書く（「です・ます」調）
+6. 【　】で演技指示を挿入する（例：【ゆっくり資料を指差しながら】）
+7. 反論処理は今回は省略する`;
+}
+
+function buildScriptUser(name, analysis, sup) {
+  return `以下の分析レポート${sup?'と補足情報':''}を基に、${name}様との第2回個別面談の完全トークスクリプトを生成してください。
+
+━━━━━━━━━━━━━━━━━━━━
+【クライアント分析レポート】
+━━━━━━━━━━━━━━━━━━━━
+${analysis}
+${sup ? `
+━━━━━━━━━━━━━━━━━━━━
+【追加補足情報・修正点】
+━━━━━━━━━━━━━━━━━━━━
+${sup}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━
+【スクリプト構成】
+━━━━━━━━━━━━━━━━━━━━
+
+■ 前半20分（4,500字以上）
+
+Phase 1｜再接続とラポール再構築（0〜5分）
+・第1回からの「その後」を必ず聞く
+・前回のキーワードを自然に再登場させる
+・「今日もお時間をとっていただいた理由」を改めて確認
+・場を温めてから本題へ自然に移行
+
+Phase 2｜データの開示「見えていた正体」（5〜12分）
+・アンケートと占星術・バイオリズムを統合して説明
+・体質パターンを「あなたはこのタイプです」と明示
+・「努力の問題ではなく設計図レベルの問題」フレームを確立
+・「こういう感覚、ありませんか？」で小さなYESを3回積む
+
+Phase 3｜ネガティブシミュレーション（12〜20分）
+・「6ヶ月後→1〜2年後→3〜5年後」のタイムラインで語る
+・クライアント固有の状況（仕事・家族・夢）を使った具体的な地獄絵図
+・「そうはなりたくないですよね」でYESを取る
+・「今のままで10年後を100%信頼して任せられますか？」で決断の必要性を迫る
+
+■ 後半20分（4,500字以上）
+
+Phase 4｜ポジティブシミュレーション（20〜28分）
+・ハーブファスティング後の「ゾーン状態」を情景として描写
+・クライアントが第1回で語った具体的な夢・目標を使う
+・バイオリズムの「攻めの波」がいつ来るかを具体的に伝える
+・「今の半分の力で、○倍の○○が手に入ると思いませんか？」でYES
+
+Phase 5｜ボトルネックの提示とオープンループ（28〜33分）
+・「パフォーマンスを最も下げているたった一つの正体」を提示
+・完全には開示せず渇望感を高める
+・「ここさえ外せば一気に変わります」で次フェーズへの期待を作る
+
+Phase 6｜プランの提示とクロージング（33〜40分）
+・松（最上位）・竹（中位）の2プランを提示
+・定価 → 特別価格の流れでギフト感を演出
+・意思決定タイプに合ったクロージングフレーズを使う
+・「どちらの未来を選びますか？」の後は沈黙の指示を入れる
+・決断後の祝福フレーズと事務的な次のステップも記載
+
+━━━━━━━━━━━━━━━━━━━━
+クライアント名は「${name}さん」として全文を書いてください。
+必ず10,000字以上、各フェーズを充実させてください。
+━━━━━━━━━━━━━━━━━━━━`;
+}
+
+// ═══════════════════════════════════
+// UTILS
+// ═══════════════════════════════════
+function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+function fakeProgress(id, max) { const el=document.getElementById(id); el.style.width='0%'; setTimeout(()=>{el.style.width=max+'%';},100); }
+function doCopy(srcId, btnId) {
+  navigator.clipboard.writeText(document.getElementById(srcId).textContent).then(()=>{
+    const b=document.getElementById(btnId); b.textContent='コピー済'; b.classList.add('ok');
+    setTimeout(()=>{b.textContent='コピー';b.classList.remove('ok');},2000);
+  });
+}
+function restartAll() {
+  document.getElementById('inputSection').style.display = 'block';
+  document.getElementById('analysisCard').classList.remove('show');
+  document.getElementById('supCard').classList.remove('show');
+  document.getElementById('supCard').style.display = '';
+  document.getElementById('scriptCard').classList.remove('show');
+  document.getElementById('restartRow').style.display = 'none';
+  document.getElementById('genBtn').style.display = 'none';
+  document.getElementById('supInput').style.display = 'none';
+  document.getElementById('chOk').classList.remove('on');
+  document.getElementById('chSup').classList.remove('on');
+  document.getElementById('scriptErr').classList.remove('show');
+  document.getElementById('aProg').style.display = 'block';
+  document.getElementById('aProg').style.color = '';
+  document.getElementById('sProg').style.display = 'none';
+  document.getElementById('sPbarWrap').style.display = 'none';
+  analysisText = ''; clientNameVal = '';
+  setStep(1);
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
