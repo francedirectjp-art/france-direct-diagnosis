@@ -224,6 +224,12 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
         </div>
       </div>
 
+      <!-- Body Type -->
+      <div class="panel-card" id="dTypeCard" style="margin-bottom:14px;">
+        <div class="panel-card-title">BODY TYPE — 体質パターン</div>
+        <div id="dTypeContent"></div>
+      </div>
+
       <div class="alert-block" id="dAlertBlock" style="display:none;">
         <div class="alert-block-title">HIGH ALERT — スコア4以上の項目</div>
         <div id="dAlertList"></div>
@@ -518,6 +524,9 @@ function showDetail(id) {
       <div><span style="color:var(--red);font-weight:700">Q${q.id}</span>（${answers[q.id]}点）${q.text}</div></div>`).join('');
   } else document.getElementById('dAlertBlock').style.display='none';
 
+  // Body Type
+  buildDetailBodyType(scores, document.getElementById('dTypeContent'));
+
   // Coach notes
   buildDetailCoach(scores, document.getElementById('dCoachContent'));
 
@@ -567,6 +576,45 @@ function buildDetailRadar(scores) {
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}：${ctx.raw.toFixed(1)} / 5.0`}}}
     }
   });
+}
+
+// ===================================================
+// BODY TYPE（コーチ用）
+// ===================================================
+function buildDetailBodyType(scores, container) {
+  const ls = scores.liver    || 0;
+  const ks = scores.kidney   || 0;
+  const ds = scores.digestion|| 0;
+
+  const types = {
+    liver:          { badge:'肝臓負荷蓄積型',    desc:'解毒フィルターに過負荷。翌日の倦怠感・目の疲れ・右わき腹の重さがサイン。飲酒・外食が多いタイプに頻出。', coach:'「翌日の倦怠感が以前より強くなりましたか？」から入ると気づきが生まれやすい。Artémis（マリアアザミ・タンポポ根）提案タイミング。' },
+    kidney:         { badge:'腎臓エネルギー枯渇型', desc:'根本的な回復力の低下。どれだけ寝ても抜けない疲れ、下半身の冷え・むくみ、腰の重さが典型。長期高負荷タイプに多い。', coach:'「最近、以前より寒がりになりましたか？」「腰の奥に重さはありますか？」が有効な切り口。腎サポートハーブの提案タイミング。' },
+    digestion:      { badge:'腸脳軸過負荷型',    desc:'腸内環境の乱れが判断精度を直撃。食後の集中力低下・肌荒れ・気分の波が特徴。腸脳軸の説明が最も響くタイプ。', coach:'「食後30分の頭の重さはどうですか？」から入ると問題認識が高まりやすい。ファスティングで腸リセットが最優先提案。' },
+    liver_kidney:   { badge:'解毒・排泄系複合型', desc:'肝臓と腎臓の両方に同時負荷。単独型より深刻で「頑張っても回復しない」の根本原因。複合的なデトックスが必要な状態。', coach:'どちらか一方の症状から入り、「実は連動しているんですよ」と両方の関係を説明すると理解・納得が深まりやすい。' },
+    liver_digestion:{ badge:'腸肝クロス疲弊型',  desc:'腸肝循環の詰まり。毒素の処理が追いつかず脳まで届いている状態。食後の思考力低下・慢性頭痛・肌くすみが特徴。', coach:'「食後に頭のモヤが出ませんか？」が刺さる切り口。腸と肝臓の連動をホワイトボードで図示すると理解が深まる。' },
+    neuro:          { badge:'脳・神経過負荷型',   desc:'臓器より先に脳・神経系が疲弊。臓器への負荷が始まる前の予備軍段階。今が最も介入しやすいタイミング。', coach:'「PCを閉じても頭がオフにならない感覚はありますか？」が切り口。予防的提案として今がベストタイミングであることを伝える。' },
+  };
+
+  let typeKey;
+  const lH = ls>=2.0, kH = ks>=2.0, dH = ds>=2.0;
+  if (lH && kH && dH)   typeKey = 'liver_kidney';
+  else if (lH && kH)    typeKey = 'liver_kidney';
+  else if (lH && dH)    typeKey = 'liver_digestion';
+  else if (ls>=ks && ls>=ds && ls>=1.8) typeKey = 'liver';
+  else if (ks>=ls && ks>=ds && ks>=1.8) typeKey = 'kidney';
+  else if (ds>=ls && ds>=ks && ds>=1.8) typeKey = 'digestion';
+  else                  typeKey = 'neuro';
+
+  const t = types[typeKey];
+  container.innerHTML = `
+    <div class="coach-block">
+      <div class="coach-block-lbl" style="font-size:11px;color:var(--gold);font-weight:700;">${t.badge}</div>
+      <div class="coach-block-text" style="margin-bottom:8px;">${t.desc}</div>
+    </div>
+    <div class="coach-tip-block">
+      <div class="coach-tip-lbl">このタイプへの会話の入り方</div>
+      <ul class="coach-tip-list"><li>${t.coach}</li></ul>
+    </div>`;
 }
 
 // ===================================================
