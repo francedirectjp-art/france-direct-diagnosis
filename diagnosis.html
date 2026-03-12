@@ -290,7 +290,6 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
     <div class="check-list">
       <div class="check-item"><input type="checkbox" id="f1" value="判断精度・意思決定の質が落ちている気がする"><label for="f1">判断精度・意思決定の質が落ちている気がする</label></div>
       <div class="check-item"><input type="checkbox" id="f2" value="身体のどこに負荷がかかっているか知りたい"><label for="f2">身体のどこに負荷がかかっているか知りたい</label></div>
-      <div class="check-item"><input type="checkbox" id="f3" value="今は攻める時期か、整える時期かを知りたい"><label for="f3">今は攻める時期か、整える時期か知りたい</label></div>
       <div class="check-item"><input type="checkbox" id="f4" value="ハーブファスティングで何が変わるか知りたい"><label for="f4">ハーブファスティングで何が変わるか知りたい</label></div>
       <div class="check-item"><input type="checkbox" id="f5" value="今後のバイオリズム・波の読み方を知りたい"><label for="f5">今後のバイオリズム・波の読み方を知りたい</label></div>
       <div class="check-item"><input type="checkbox" id="f6" value="本来の自分のパフォーマンスを取り戻したい"><label for="f6">本来の自分のパフォーマンスを取り戻したい</label></div>
@@ -452,12 +451,6 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
   </div>
 
 
-  <!-- Coach note (非印刷向けはprint CSSで制御) -->
-  <div class="coach-card">
-    <div class="coach-card-title">COACH NOTE — アドバイザー用読み取りガイド</div>
-    <div id="coachContent"></div>
-  </div>
-
   <div class="info-card" id="focusCard" style="display:none;">
     <div class="info-title">TODAY'S FOCUS — 本日確認したいこと</div>
     <div class="tag-row" id="focusTags"></div>
@@ -527,17 +520,26 @@ const questions = [
   // Section 4: 追加臓器負荷問い
   { id:33, s:4, text:'夕方以降、右肩から背中にかけての張りや重さを感じることがある' },
   { id:34, s:4, text:'以前より寒がりになった、または下半身の冷えや足のだるさが気になる' },
+  // 追加：「おー」感を高める具体的問い
+  { id:35, s:3, text:'夢をよく見る、または夢の中から覚めるような浅い眠りが多い' },
+  { id:36, s:2, text:'スマホやPCを閉じた後も、情報や会話が頭の中でぐるぐると続いている' },
+  { id:37, s:1, text:'コーヒーや甘いものがないと午後を乗り越えられない、という感覚がある' },
+  { id:38, s:4, text:'特に何もしていないのに、夕方以降に急な眠気が来ることがある（肝臓サイン）' },
+  { id:39, s:4, text:'以前より怒りやすくなった、またはイライラが抑えにくくなったと感じる' },
+  { id:40, s:4, text:'夜になると下半身がだるい・重い、または足のむくみが取れていない' },
+  { id:41, s:3, text:'食後にしばらく横になるか、ぼーっとしないと頭が働かない習慣がついた' },
+  { id:42, s:5, text:'「あの時すぐ動いていれば」という後悔が、過去1年で何度かある' },
 ];
 
 const axes = [
-  { key:'recovery',  label:'回復力',     qs:[1,5,29,30,31] },
-  { key:'digestion', label:'腸',         qs:[2,11,15] },
-  { key:'liver',     label:'肝臓',       qs:[16,17,23,24,33] },
-  { key:'kidney',    label:'腎臓',       qs:[18,19,25,26,34] },
-  { key:'brain',     label:'脳・集中',   qs:[3,4,8] },
+  { key:'recovery',  label:'回復力',     qs:[1,5,29,30,31,37] },
+  { key:'digestion', label:'腸',         qs:[2,11,15,41] },
+  { key:'liver',     label:'肝臓',       qs:[16,17,23,24,33,38,39] },
+  { key:'kidney',    label:'腎臓',       qs:[18,19,25,26,34,40] },
+  { key:'brain',     label:'脳・集中',   qs:[3,4,8,36] },
   { key:'judgment',  label:'判断精度',   qs:[6,7,9,10,32] },
-  { key:'autonomic', label:'自律神経',   qs:[12,13,14] },
-  { key:'timing',    label:'タイミング', qs:[20,21,22,27,28] },
+  { key:'autonomic', label:'自律神経',   qs:[12,13,14,35] },
+  { key:'timing',    label:'タイミング', qs:[20,21,22,27,28,42] },
 ];
 
 const ratings = {};
@@ -642,7 +644,6 @@ function analyze() {
   buildScoreCards(scores);
   buildAlerts();
   buildBottleneck(scores);
-  buildCoachNotes(scores);
   buildFocus();
   saveToSupabase(name, date, scores);
 }
