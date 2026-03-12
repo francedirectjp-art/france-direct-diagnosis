@@ -179,6 +179,38 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .neg-step-label { font-size: 10px; color: var(--red); font-weight: 700; white-space: nowrap; min-width: 72px; padding-top: 3px; letter-spacing: 0.05em; }
 .neg-step-text { font-size: 12px; color: #c8a8a8; line-height: 1.85; }
 
+/* ===== 体質タイプカード ===== */
+.type-card {
+  background: var(--dark3);
+  border: 1px solid rgba(180,150,80,0.4);
+  padding: 22px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.type-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent 65%);
+}
+.type-tag { font-size: 9px; color: var(--gold); letter-spacing: 0.22em; font-weight: 700; margin-bottom: 10px; }
+.type-badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  color: var(--dark); background: var(--gold);
+  padding: 3px 14px; letter-spacing: 0.07em; margin-bottom: 14px;
+}
+.type-title { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.45; margin-bottom: 10px; }
+.type-title span { color: var(--gold); }
+.type-desc { font-size: 12px; color: var(--text-muted); line-height: 1.95; margin-bottom: 18px; }
+.type-signals-label { font-size: 9px; color: var(--gold); font-weight: 700; letter-spacing: 0.14em; margin-bottom: 10px; }
+.type-signal-list { display: flex; flex-direction: column; gap: 8px; }
+.type-signal-item { display: flex; gap: 10px; align-items: flex-start; }
+.type-signal-dot { width: 4px; height: 4px; background: var(--gold); border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+.type-signal-main { font-size: 12px; color: var(--text); line-height: 1.5; font-weight: 600; }
+.type-signal-sub { font-size: 10.5px; color: var(--text-muted); line-height: 1.6; margin-top: 2px; }
+
 /* CTA card */
 .cta-card {
   background: var(--gold);
@@ -433,6 +465,16 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
   <!-- Score grid -->
   <div class="score-grid" id="scoreGrid"></div>
 
+  <!-- Body Type -->
+  <div class="type-card" id="typeCard">
+    <div class="type-tag">BODY TYPE ANALYSIS — 体質パターン診断</div>
+    <div class="type-badge" id="typeBadge"></div>
+    <div class="type-title" id="typeTitle"></div>
+    <div class="type-desc" id="typeDesc"></div>
+    <div class="type-signals-label">未病サイン — あなたが見逃しているかもしれない初期シグナル</div>
+    <div class="type-signal-list" id="typeSignals"></div>
+  </div>
+
   <!-- High alert -->
   <div class="alert-card" id="alertCard" style="display:none;">
     <div class="alert-card-title">CRITICAL SIGNAL — 即時対処が必要な項目</div>
@@ -642,6 +684,7 @@ function analyze() {
   buildAssetStatus(scores);
   buildRadarChart(scores);
   buildScoreCards(scores);
+  buildBodyType(scores);
   buildAlerts();
   buildBottleneck(scores);
   buildFocus();
@@ -739,6 +782,117 @@ function buildAlerts() {
       <div class="alert-item"><div class="alert-dot"></div>
       <div><span style="color:#d04848;font-weight:700;">Q${q.id}</span>（${ratings[q.id]}点）${q.text}</div></div>`).join('');
   } else card.style.display='none';
+}
+
+// ===================================================
+// BODY TYPE ANALYSIS — 体質パターン判定
+// ===================================================
+function buildBodyType(scores) {
+  const ls = scores.liver    || 0;
+  const ks = scores.kidney   || 0;
+  const ds = scores.digestion|| 0;
+  const bs = scores.brain    || 0;
+  const as = scores.autonomic|| 0;
+
+  // タイプ定義
+  const types = {
+    liver: {
+      badge: '肝臓負荷蓄積型',
+      title: 'あなたは<span>「肝臓」</span>に負荷が集まりやすい体質です',
+      desc: '高いパフォーマンスを維持しようとする努力家・仕事密度の高いタイプに多いパターンです。食事が不規則になりがち、ビジネスの席での飲酒機会が多い、または寝ても疲れが抜けきらないと感じている方に、この傾向が強く出ます。肝臓は「沈黙の臓器」と呼ばれ、限界が来るまで声を上げません。しかし、その前段階である「未病」の状態は、今回のデータにすでに現れています。',
+      signals: [
+        { main: '夕方以降の急な眠気', sub: '食後・夕方のぼんやりは「意志の問題」ではなく、肝臓が解毒作業に全力を使っているサインです。' },
+        { main: '右わき腹から右肩にかけての重さ・張り', sub: '肝臓は右肋骨の下に位置します。右側の慢性的なこりは、肝臓の疲れがそのまま出やすい場所です。' },
+        { main: '目の疲れ・乾き・充血がなかなか取れない', sub: '東洋医学では「肝は目に開く」とされます。目の慢性的な不調は肝臓の状態を映す鏡です。' },
+        { main: '飲酒・脂っこい食事の翌日の明らかな倦怠感', sub: '以前と同じ量でも回復に時間がかかるようになった場合、肝臓の処理能力が落ちているサインです。' },
+      ],
+    },
+    kidney: {
+      badge: '腎臓エネルギー枯渇型',
+      title: 'あなたは<span>「腎臓」</span>から根本的なエネルギーが失われているパターンです',
+      desc: '長期間にわたって高負荷をかけ続けてきた方、または慢性的なプレッシャー・不安と向き合ってきた方に多いパターンです。東洋医学では腎臓は「生命エネルギー（精）の貯蔵庫」とされ、ここが枯渇すると根の力そのものが失われていきます。表面的には頑張れていても、土台から削れているのがこのタイプの特徴です。',
+      signals: [
+        { main: '下半身の慢性的なだるさ・むくみ・冷え', sub: '腎臓の疲れは下半身に出やすく、夜になるほど足がだるく重くなるのが典型的なサインです。' },
+        { main: '腰の下部・骨盤周辺の鈍い重さ', sub: '腎臓は腰の背後に位置します。慢性的な腰の重さのうち、筋肉ではなく「奥から来る重さ」は腎臓由来のことが多いです。' },
+        { main: '耳鳴り・耳の詰まり感・聴覚の変化', sub: '「腎は耳に開く」という東洋医学の知見のとおり、腎疲労が耳の変化として現れることがあります。' },
+        { main: 'どれだけ寝ても疲れが取れない感覚', sub: '睡眠の「量」は確保できていても「質」が伴わない状態は、腎臓の回復力の低下が背景にあることが多いです。' },
+      ],
+    },
+    digestion: {
+      badge: '腸脳軸過負荷型',
+      title: 'あなたの判断精度を下げているのは<span>「腸」</span>の状態です',
+      desc: '食事のタイミングが不規則、早食い、ストレスが胃腸に出やすい、会食・会議が多いというライフスタイルの方に多いパターンです。「腸は第二の脳」と呼ばれるほど、腸と脳は直接つながっています（腸脳軸）。腸内の炎症や毒素の蓄積は、脳への情報伝達を物理的に遅らせ、食後の集中力低下・判断の鈍さとして表れます。',
+      signals: [
+        { main: '食後30〜60分の集中力・判断力の明らかな低下', sub: '「午後の会議は頭が重い」という状態は消化器の問題です。食後のパフォーマンス低下は意志の問題ではありません。' },
+        { main: '膨満感・胃の重さを「これが普通」と受け入れている', sub: '慣れてしまっているだけで、本来その感覚は「普通」ではありません。腸がSOSを出している状態です。' },
+        { main: '肌荒れ・吹き出物・くすみが慢性的に続く', sub: '腸内環境の乱れは皮膚に出ます。腸内の毒素が血流に乗り、肌に現れているサインです。' },
+        { main: '気分の波・モチベーションの波が大きい', sub: '幸せホルモン（セロトニン）の90%は腸で作られます。腸が乱れると気分も乱れます。' },
+      ],
+    },
+    liver_kidney: {
+      badge: '解毒・排泄系複合型',
+      title: '<span>「肝臓」と「腎臓」</span>の両方に同時に負荷がかかっているパターンです',
+      desc: '長期にわたって高密度で働き続けてきた方に出やすい複合型です。肝臓（解毒）と腎臓（排泄）はセットで機能しており、一方が弱ると他方にも負荷が集中します。このパターンは単独型より影響が深く広く、「頑張っているのに回復しない」という感覚の根本原因になっていることが多いです。',
+      signals: [
+        { main: '慢性的な疲労感（休んでも取れない種類の疲れ）', sub: '肝臓と腎臓の両方が弱ると、どんな休息も「修繕が追いつかない」状態になります。' },
+        { main: '顔色・肌のくすみ、目の下のクマ', sub: '解毒と排泄の両方が詰まると、処理できなかった老廃物が表面に現れます。' },
+        { main: '右わき腹の重さ＋腰の下部のだるさが同時に出る', sub: '肝臓（右側）と腎臓（腰背部）の両方のサインが同時に出ている状態は複合型の典型です。' },
+        { main: '感情の制御がしにくくなった（怒り・不安が出やすい）', sub: '肝臓は怒り・ストレスと、腎臓は恐れ・不安と関連する臓器とされています。両方の疲れが感情面に影響します。' },
+      ],
+    },
+    liver_digestion: {
+      badge: '腸肝クロス疲弊型',
+      title: '<span>「腸」と「肝臓」</span>が連動して疲弊しているパターンです',
+      desc: '腸と肝臓は「腸肝循環」という仕組みで密接につながっています。腸内で発生した毒素は肝臓が解毒しますが、両方が同時に疲弊すると毒素の処理が追いつかなくなります。このパターンでは、食後の思考力低下・頭のモヤ感・慢性的なくすみが特徴的に現れます。',
+      signals: [
+        { main: '食後の頭のモヤ・判断力の低下が顕著', sub: '腸内で処理しきれなかった毒素が肝臓に流れ込み、そこでも処理が追いつかず脳へ届いている状態です。' },
+        { main: '口臭・体臭の変化に気づく', sub: '腸と肝臓両方の解毒が追いつかないと、排泄できない毒素が呼気・皮膚から漏れ出します。' },
+        { main: '慢性的な頭痛・偏頭痛', sub: '腸肝軸の詰まりは、頭部の血流・リンパの滞りとして頭痛に現れることがあります。' },
+        { main: '肌のくすみ＋食後の膨満感がセットで出る', sub: '腸と肝臓の両方が詰まっているパターンに特徴的な症状の組み合わせです。' },
+      ],
+    },
+    neuro: {
+      badge: '脳・神経過負荷型',
+      title: '臓器より先に<span>「脳と神経系」</span>に負荷が集中しているパターンです',
+      desc: '知的作業量が多く、常に思考し続けているタイプに多いパターンです。臓器系はまだ比較的維持されていますが、脳と自律神経が先行して疲弊しています。このまま放置すると臓器への負荷が始まる「予備軍」段階でもあります。今がもっとも介入しやすいタイミングです。',
+      signals: [
+        { main: 'PCを閉じた後も情報・会話が頭でぐるぐると続く', sub: '脳が「オフ」のスイッチを押せなくなっている状態です。交感神経が優位のまま固定されています。' },
+        { main: '眠れているのに疲れが取れない', sub: '脳が休息中も情報処理を続けているため、睡眠の「量」があっても「質」が確保できていません。' },
+        { main: '以前は直感で決めていたことに迷いが増えた', sub: '脳疲労が蓄積すると、前頭前野（判断系）の機能が低下し、直感より迷いが優先されるようになります。' },
+        { main: '気温・気圧の変化で体調が変わる', sub: '自律神経の調節力が落ちると、外部環境の変化に対応するコストが増え、体調に波が出やすくなります。' },
+      ],
+    },
+  };
+
+  // タイプ判定ロジック
+  let typeKey;
+  const liverHigh = ls >= 2.0, kidneyHigh = ks >= 2.0, digestHigh = ds >= 2.0;
+
+  if (liverHigh && kidneyHigh && digestHigh) {
+    typeKey = 'liver_kidney'; // 三臓器 → 最重症は肝腎で代表
+  } else if (liverHigh && kidneyHigh) {
+    typeKey = 'liver_kidney';
+  } else if (liverHigh && digestHigh) {
+    typeKey = 'liver_digestion';
+  } else if (ls >= kidneyHigh && ls >= ds && ls >= 1.8) {
+    typeKey = 'liver';
+  } else if (ks >= ls && ks >= ds && ks >= 1.8) {
+    typeKey = 'kidney';
+  } else if (ds >= ls && ds >= ks && ds >= 1.8) {
+    typeKey = 'digestion';
+  } else {
+    typeKey = 'neuro'; // 臓器への負荷が低く、神経系に集中
+  }
+
+  const t = types[typeKey];
+  document.getElementById('typeBadge').textContent = t.badge;
+  document.getElementById('typeTitle').innerHTML = t.title;
+  document.getElementById('typeDesc').textContent = t.desc;
+  document.getElementById('typeSignals').innerHTML = t.signals.map(s => `
+    <div class="type-signal-item">
+      <div class="type-signal-dot"></div>
+      <div><div class="type-signal-main">${s.main}</div><div class="type-signal-sub">${s.sub}</div></div>
+    </div>`).join('');
 }
 
 // ===================================================
