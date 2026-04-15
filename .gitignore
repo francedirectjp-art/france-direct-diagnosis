@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+*.pid
+*.sock
+venv/
+.venv/
+node_modules/
+spec_share_card.docx

@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bio-Profile Analysis | Personal Body Constitution Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#f0f2f5;--bg2:#ffffff;--bg3:#e8ecf1;--bg4:#d5dbe5;
+  --gold:#0d2f50;--gold-l:#1a4a7a;--gold-d:rgba(13,47,80,0.06);--gold-b:rgba(13,47,80,0.14);
+  --text:#0f1f33;--text2:#3d5468;--text3:#7a92a8;
+  --liver:#b02a24;--liver-bg:rgba(176,42,36,0.05);
+  --gut:#7b6b20;--gut-bg:rgba(123,107,32,0.05);
+  --kidney:#1a5a8f;--kidney-bg:rgba(26,90,143,0.05);
+  --circ:#157a6e;--circ-bg:rgba(21,122,110,0.05);
+  --red:#b02a24;--green:#1e7a4a;
+  --accent:#c0cfe0;--accent2:#8fa8c4;
+  --radius:6px;--border:rgba(13,47,80,0.10);
+}
+html{scroll-behavior:smooth;}
+body{font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.7;-webkit-font-smoothing:antialiased;}
+
+/* === SCROLL PROGRESS === */
+.scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,#0d2f50,#1a5a8f,#157a6e);z-index:9999;transition:width 0.1s;}
+
+/* === HEADER === */
+.app-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 20px;text-align:center;position:sticky;top:0;z-index:1000;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 1px 6px rgba(0,0,0,0.04);}
+.app-header h1{font-size:11px;color:var(--gold);letter-spacing:0.22em;font-weight:700;}
+.app-header p{font-size:9.5px;color:var(--text3);margin-top:2px;letter-spacing:0.06em;}
+
+.container{max-width:720px;margin:0 auto;padding:20px 14px 100px;}
+
+/* === PHASE INDICATOR === */
+.phase-bar{display:flex;gap:2px;margin-bottom:24px;}
+.phase-step{flex:1;height:3px;background:var(--bg4);border-radius:2px;transition:background 0.5s;}
+.phase-step.done{background:var(--gold);}
+.phase-step.active{background:var(--gold);animation:phasePulse 2s infinite;}
+@keyframes phasePulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.phase-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:24px;letter-spacing:0.04em;}
+.phase-labels span.active{color:var(--gold);font-weight:700;}
+.phase-labels span.done{color:var(--green);}
+
+/* === SECTION STYLING === */
+.section{display:none;animation:sectionIn 0.5s ease;}
+.section.active{display:block;}
+@keyframes sectionIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* === CARD === */
+.card{background:var(--bg2);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-radius:var(--radius);position:relative;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.03);}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.card-tag{font-size:8.5px;color:var(--gold);letter-spacing:0.2em;font-weight:700;margin-bottom:8px;}
+.card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.card-sub{font-size:10.5px;color:var(--text2);line-height:1.8;}
+
+/* === INTRO HERO === */
+.hero{text-align:center;padding:56px 20px 36px;}
+.hero-overtitle{font-size:9px;color:var(--accent2);letter-spacing:0.3em;font-weight:700;margin-bottom:14px;text-transform:uppercase;}
+.hero h2{font-size:20px;font-weight:700;color:var(--gold);margin-bottom:18px;line-height:1.65;letter-spacing:-0.01em;}
+.hero h2 span{color:var(--text);}
+.hero p{font-size:12px;color:var(--text2);line-height:2.1;max-width:560px;margin:0 auto 36px;}
+.hero-features{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:32px;}
+.hero-feat{background:var(--bg2);border:1px solid var(--border);padding:14px 18px;border-radius:var(--radius);font-size:10.5px;color:var(--text2);line-height:1.7;min-width:150px;text-align:left;box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.hero-feat strong{color:var(--gold);display:block;margin-bottom:3px;font-size:11px;}
+
+/* === SCIENCE FAQ === */
+.science-faq{background:var(--bg2);border:1px solid var(--border);padding:20px 22px;border-radius:var(--radius);margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.science-faq-q{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.science-faq-a{font-size:11px;color:var(--text2);line-height:2;}
+
+/* === CORE SYSTEMS === */
+.core-systems{margin-bottom:24px;}
+.core-systems-title{font-size:10px;color:var(--gold);letter-spacing:0.2em;font-weight:700;margin-bottom:6px;text-transform:uppercase;}
+.core-systems-sub{font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:16px;}
+.core-sys-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:520px){.core-sys-grid{grid-template-columns:1fr;}}
+.core-sys-card{background:var(--bg2);border:1px solid var(--border);padding:16px;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.core-sys-icon{font-size:20px;margin-bottom:8px;}
+.core-sys-name{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.core-sys-en{font-size:9px;color:var(--text3);letter-spacing:0.06em;margin-bottom:6px;}
+.core-sys-desc{font-size:10px;color:var(--text2);line-height:1.7;}
+
+/* === FOOTER CTA === */
+.footer-cta{text-align:center;padding:28px 20px;margin-bottom:20px;}
+
+/* === FORM ELEMENTS === */
+.field-label{font-size:10px;color:var(--text2);letter-spacing:0.05em;margin-bottom:5px;display:block;}
+.field-req{color:var(--red);margin-left:2px;}
+.text-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 13px;font-size:13px;font-family:inherit;border-radius:4px;transition:border-color 0.15s;}
+.text-input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(26,82,118,0.1);}
+.text-input.error{border-color:var(--red);}
+.field-row{display:flex;gap:12px;flex-wrap:wrap;}
+.field-group{flex:1;min-width:140px;margin-bottom:10px;}
+
+/* === QUESTION SCALE === */
+.q-category{margin-bottom:24px;}
+.q-cat-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.q-cat-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.q-cat-label{font-size:11px;font-weight:700;color:var(--text);}
+.q-cat-sub{font-size:9.5px;color:var(--text3);}
+.q-cat-count{font-size:9px;color:var(--text3);margin-left:auto;white-space:nowrap;}
+
+.q-scale-legend{display:flex;justify-content:flex-end;gap:0;margin-bottom:8px;}
+.q-scale-lbl{width:38px;font-size:8px;color:var(--text3);text-align:center;line-height:1.3;}
+
+.q-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.q-row:last-child{border-bottom:none;}
+.q-row.unanswered .q-text{color:var(--red);}
+.q-num{font-size:8px;color:var(--gold);font-weight:700;min-width:18px;text-align:right;flex-shrink:0;}
+.q-text{flex:1;font-size:11.5px;color:var(--text);line-height:1.5;}
+.q-btns{display:flex;gap:2px;flex-shrink:0;}
+.r-btn{width:38px;height:34px;border:1px solid var(--border);background:var(--bg2);color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;font-weight:600;transition:all 0.12s;border-radius:4px;user-select:none;}
+.r-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-d);}
+.r-btn.sel{border-color:var(--gold);background:var(--gold);color:#fff;font-weight:700;}
+.r-btn.sel-high{border-color:#d07830;background:#d07830;color:#fff;font-weight:700;}
+.r-btn.sel-crit{border-color:var(--red);background:var(--red);color:#fff;font-weight:700;}
+
+/* === BUTTONS === */
+.btn{display:block;width:100%;padding:16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:0.1em;border:none;border-radius:var(--radius);transition:all 0.2s;text-align:center;}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-l));color:#fff;box-shadow:0 4px 16px rgba(13,47,80,0.2);}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(13,47,80,0.3);}
+.btn-gold:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-outline{background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:12px;padding:12px;}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-row{display:flex;gap:10px;margin-top:14px;}
+
+/* === PROGRESS INDICATOR === */
+.progress-ring{display:flex;flex-direction:column;align-items:center;gap:8px;margin:20px 0;}
+.progress-ring-text{font-size:11px;color:var(--text2);letter-spacing:0.05em;}
+
+/* === ANALYZING ANIMATION === */
+.analyzing{text-align:center;padding:60px 20px;}
+.analyzing h3{font-size:16px;color:var(--gold);margin-bottom:8px;}
+.analyzing p{font-size:11px;color:var(--text2);margin-bottom:24px;line-height:1.8;}
+.analyze-steps{max-width:400px;margin:0 auto;text-align:left;}
+.analyze-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:11px;color:var(--text3);}
+.analyze-step.active{color:var(--gold);}
+.analyze-step.done{color:var(--green);}
+.analyze-step-icon{width:20px;text-align:center;flex-shrink:0;}
+.analyze-bar{height:2px;background:var(--bg4);margin:20px 0;border-radius:1px;overflow:hidden;}
+.analyze-bar-fill{height:100%;background:var(--gold);border-radius:1px;transition:width 0.5s ease;}
+
+/* === RESULTS === */
+.results-header{text-align:center;padding:24px 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px;background:var(--bg2);border-radius:var(--radius);padding:24px 20px 20px;}
+.results-name{font-size:24px;font-weight:700;color:var(--gold);letter-spacing:0.05em;}
+.results-meta{font-size:10px;color:var(--text3);margin-top:6px;line-height:1.8;}
+
+/* Type Badge */
+.type-reveal{text-align:center;padding:28px 20px;margin-bottom:20px;background:var(--bg2);border:1px solid var(--gold-b);border-radius:var(--radius);position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+.type-reveal::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(26,82,118,0.04),transparent 70%);}
+.type-reveal-tag{font-size:8.5px;color:var(--gold);letter-spacing:0.25em;font-weight:700;margin-bottom:12px;}
+.type-badge{display:inline-block;font-size:12px;font-weight:700;color:var(--bg);background:linear-gradient(135deg,var(--gold),var(--gold-l));padding:5px 20px;letter-spacing:0.08em;margin-bottom:14px;border-radius:3px;}
+.type-name{font-size:20px;font-weight:700;color:var(--text);line-height:1.4;margin-bottom:8px;}
+.type-subtitle{font-size:11px;color:var(--text2);line-height:1.8;}
+
+/* Organ Risk Cards */
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+@media(max-width:520px){.risk-grid{grid-template-columns:1fr;}}
+.risk-card{background:var(--bg2);border:1px solid var(--border);padding:16px;border-radius:var(--radius);position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.risk-card.primary{border-color:rgba(13,47,80,0.35);}
+.risk-card.primary::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);}
+.risk-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.risk-card-label{font-size:10px;font-weight:700;color:var(--text);}
+.risk-card-pct{font-size:22px;font-weight:700;line-height:1;}
+.risk-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.risk-bar-fill{height:100%;border-radius:3px;transition:width 1.2s ease;}
+.risk-card-level{font-size:9px;color:var(--text3);}
+.risk-card-tag{font-size:8px;padding:1px 6px;border-radius:2px;font-weight:700;}
+
+/* Body Heatmap */
+.body-map-wrap{text-align:center;padding:20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.body-map-title{font-size:9px;color:var(--gold);letter-spacing:0.2em;font-weight:700;margin-bottom:16px;}
+.body-svg{max-width:200px;margin:0 auto;}
+
+/* Radar Chart */
+.chart-card{background:var(--bg2);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.chart-card-title{font-size:9px;color:var(--gold);letter-spacing:0.18em;font-weight:700;text-align:center;margin-bottom:14px;}
+.chart-wrap{max-width:320px;margin:0 auto;}
+
+/* Detail Cards */
+.detail-card{background:var(--bg2);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-radius:var(--radius);position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.detail-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.detail-tag{font-size:8.5px;color:var(--gold);letter-spacing:0.2em;font-weight:700;margin-bottom:10px;}
+.detail-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.45;margin-bottom:10px;}
+.detail-title span{color:var(--gold);}
+.detail-body{font-size:12px;color:var(--text2);line-height:2;}
+
+/* Symptom Tags */
+.symptom-tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;}
+.symptom-tag{font-size:10px;padding:4px 10px;border-radius:14px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);}
+
+/* Cascade Timeline */
+.cascade-card{background:var(--bg2);border:1px solid rgba(192,57,43,0.2);border-left:3px solid var(--red);padding:18px;margin-bottom:14px;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.cascade-title{font-size:10px;color:var(--red);font-weight:700;letter-spacing:0.1em;margin-bottom:10px;}
+.cascade-body{font-size:11.5px;color:var(--text2);line-height:2;}
+
+/* Detox Strategy */
+.detox-card{background:var(--bg2);border:1px solid rgba(39,174,96,0.2);border-left:3px solid var(--green);padding:18px;margin-bottom:14px;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.detox-title{font-size:10px;color:var(--green);font-weight:700;letter-spacing:0.1em;margin-bottom:10px;}
+.detox-body{font-size:11.5px;color:var(--text2);line-height:2;}
+
+/* Timeline */
+.timeline-card{background:var(--bg2);border:1px solid var(--border);padding:20px;margin-bottom:14px;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,0.03);}
+.tl-item{display:flex;gap:14px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.tl-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.tl-time{font-size:12px;font-weight:700;color:var(--gold);min-width:44px;flex-shrink:0;}
+.tl-content{flex:1;}
+.tl-title{font-size:11.5px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.tl-desc{font-size:10.5px;color:var(--text2);line-height:1.7;}
+
+/* CTA */
+.cta-card{background:linear-gradient(135deg,#0d2f50,#1a4a7a);padding:24px;margin-bottom:14px;border-radius:var(--radius);}
+.cta-tag{font-size:8.5px;color:rgba(255,255,255,0.6);letter-spacing:0.2em;font-weight:700;margin-bottom:8px;}
+.cta-title{font-size:16px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:10px;}
+.cta-body{font-size:11px;color:rgba(255,255,255,0.75);line-height:1.9;}
+
+/* Validation */
+.val-alert{background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.2);color:var(--red);font-size:11px;padding:10px 14px;margin-bottom:12px;border-radius:var(--radius);display:none;line-height:1.6;}
+
+/* Send Banner */
+.send-banner{font-size:11px;font-weight:700;padding:11px 18px;text-align:center;margin-bottom:16px;border-radius:var(--radius);}
+.send-banner.sending{background:rgba(26,82,118,0.06);border:1px solid var(--border);color:var(--text2);}
+.send-banner.ok{background:rgba(39,174,96,0.08);border:1px solid rgba(39,174,96,0.3);color:var(--green);}
+.send-banner.err{background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.2);color:var(--red);}
+
+/* Print */
+@media print{
+  body{background:#fff!important;color:#000!important;}
+  .app-header,.scroll-progress,.phase-bar,.phase-labels{display:none!important;}
+  .card,.detail-card,.chart-card,.risk-card,.body-map-wrap,.cascade-card,.detox-card,.timeline-card{background:#fff!important;border:1px solid #ddd!important;break-inside:avoid;box-shadow:none!important;}
+}
+
+/* Responsive */
+@media(max-width:480px){
+  .hero h2{font-size:18px;}
+  .hero-features{flex-direction:column;align-items:stretch;}
+  .q-text{font-size:11px;}
+  .r-btn{width:34px;height:32px;font-size:10px;}
+}
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<header class="app-header">
+  <h1>PERSONAL BIO-PROFILING</h1>
+  <p>出生周期 × 問診データ統合型 体質最適化解析</p>
+</header>
+
+<div class="container">
+
+<!-- PHASE INDICATOR -->
+<div class="phase-bar" id="phaseBar">
+  <div class="phase-step active" data-phase="0"></div>
+  <div class="phase-step" data-phase="1"></div>
+  <div class="phase-step" data-phase="2"></div>
+  <div class="phase-step" data-phase="3"></div>
+</div>
+<div class="phase-labels" id="phaseLabels">
+  <span class="active">基本情報</span>
+  <span>体調問診</span>
+  <span>解析中</span>
+  <span>解析結果</span>
+</div>
+
+<!-- ======================== SECTION 0: INTRO ======================== -->
+<div class="section active" id="sec0">
+  <div class="hero">
+    <div class="hero-overtitle">CHRONOBIOLOGY × DATA SCIENCE</div>
+    <h2>先天的バイオリズム × ライフスタイル解析<br><span style="font-size:0.78em;">見えない不調の「根本原因」を、<br>細胞レベルでプロファイリング。</span></h2>
+    <p>生年月日から算出される先天的体質データと、40項目の生活習慣問診を、独自のクロス解析アルゴリズムで統合。<br>腸管・肝臓・腎臓・血管系に潜む<strong>不可視のリスク傾向</strong>を、数値で可視化します。</p>
+    <div class="hero-features">
+      <div class="hero-feat">
+        <strong>🧬 出生周期クロス解析</strong>
+        時間生物学に基づく<br>先天的体質傾向の算出
+      </div>
+      <div class="hero-feat">
+        <strong>🔬 40問マルチ軸問診</strong>
+        4臓器系の現在リスクを<br>多角的にスコアリング
+      </div>
+      <div class="hero-feat">
+        <strong>📊 ハイブリッド解析</strong>
+        先天×後天の統合で<br>見えないリスクまで特定
+      </div>
+    </div>
+  </div>
+
+  <!-- CHRONOBIOLOGY EXPLANATION -->
+  <div class="science-faq">
+    <div class="science-faq-q">🔬 なぜ生年月日を使用するのか ─ クロノバイオロジー研究の知見</div>
+    <div class="science-faq-a">
+      胎児期〜新生児期に受けた<strong>光周期（日照パターン）</strong>は、脳の視交叉上核に存在する生体時計に刻印（インプリンティング）されます。<br><br>
+      ヴァンダービルト大学等の研究により、出生季節と光周期の関係が、生涯にわたる<strong>代謝リズム・自律神経バランス・ホルモン分泌パターン</strong>の初期設定に影響を与えることが示唆されています。<br><br>
+      本システムでは、これらの知見をアルゴリズムに組み込み、先天的な臓器負荷傾向を数値化。40問の生活習慣データとクロス解析することで、<strong>通常の問診だけでは検出できない潜在リスクパターン</strong>を可視化します。
+    </div>
+  </div>
+
+  <!-- FOUR HEALTH-AREA SECTIONS -->
+  <div class="core-systems">
+    <div class="core-systems-title">ANALYSIS TARGETS</div>
+    <div class="core-systems-sub">4つの主要システムを、先天的傾向と現在の生活習慣データの両面からクロス解析します。</div>
+    <div class="core-sys-grid">
+      <div class="core-sys-card" style="border-top:2px solid var(--gut);">
+        <div class="core-sys-icon">🧬</div>
+        <div class="core-sys-name">腸管ネットワーク</div>
+        <div class="core-sys-en">Gut System</div>
+        <div class="core-sys-desc">免疫機能の70%を担う消化管の状態を評価。腸脳相関による認知機能への影響も解析。</div>
+      </div>
+      <div class="core-sys-card" style="border-top:2px solid var(--liver);">
+        <div class="core-sys-icon">🧪</div>
+        <div class="core-sys-name">肝機能・解毒システム</div>
+        <div class="core-sys-en">Liver Metabolism</div>
+        <div class="core-sys-desc">500以上の代謝プロセスを司る肝臓の負荷状態を数値化。解毒フィルターの疲弊度を算出。</div>
+      </div>
+      <div class="core-sys-card" style="border-top:2px solid var(--kidney);">
+        <div class="core-sys-icon">💧</div>
+        <div class="core-sys-name">腎・排泄システム</div>
+        <div class="core-sys-en">Kidney Filtration</div>
+        <div class="core-sys-desc">水分代謝・電解質バランス・老廃物の濾過機能を評価。根本的な回復力の指標。</div>
+      </div>
+      <div class="core-sys-card" style="border-top:2px solid var(--circ);">
+        <div class="core-sys-icon">🩸</div>
+        <div class="core-sys-name">血管・循環器システム</div>
+        <div class="core-sys-en">Vascular Circulation</div>
+        <div class="core-sys-desc">末梢循環・自律神経バランス・血管弾性の状態を解析。全身の酸素供給効率を評価。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE DATA INPUT FORM -->
+  <div class="card">
+    <div class="card-tag">PROFILE DATA</div>
+    <div class="card-title">基本情報の入力</div>
+    <div class="card-sub" style="margin-bottom:16px">あなたの出生周期データをもとに、先天的な代謝リズムとクロノタイプを算出します。</div>
+    
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">お名前<span class="field-req">*</span></label>
+        <input class="text-input" type="text" id="userName" placeholder="例：山田 太郎">
+      </div>
+      <div class="field-group">
+        <label class="field-label">性別</label>
+        <select class="text-input" id="userGender">
+          <option value="">選択してください</option>
+          <option value="male">男性</option>
+          <option value="female">女性</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">生年月日<span class="field-req">*</span></label>
+        <input class="text-input" type="date" id="userBirthDate">
+      </div>
+      <div class="field-group">
+        <label class="field-label">出生時間（わかる方のみ）</label>
+        <input class="text-input" type="time" id="userBirthTime" placeholder="不明の場合は空欄">
+      </div>
+    </div>
+
+    <div style="margin-top:12px;padding:12px 14px;background:rgba(13,47,80,0.04);border:1px solid rgba(13,47,80,0.12);border-radius:4px;">
+      <p style="font-size:10px;color:var(--text2);line-height:1.8;">
+        <strong style="color:var(--gold);">📋 出生時間について：</strong>
+        出生時間がわかる場合は、より精密なクロノタイプ解析が可能です。不明の場合は正午（12:00）モデルで算出します。
+      </p>
+    </div>
+  </div>
+
+  <div class="val-alert" id="valAlert0"></div>
+  <button class="btn btn-gold" onclick="goToPhase(1)" style="margin-bottom:10px;">パーソナル体質解析を開始する →</button>
+
+  <!-- FOOTER CTA -->
+  <div class="footer-cta">
+    <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:8px;">引き算から始まる、細胞リセット。</div>
+    <div style="font-size:10.5px;color:var(--text2);line-height:1.9;max-width:480px;margin:0 auto 16px;">
+      蓄積された不可視の負荷を数値で把握し、あなた固有の体質パターンに最適化された<br>リカバリー戦略を導き出します。
+    </div>
+    <button class="btn btn-outline" onclick="goToPhase(1)" style="max-width:360px;margin:0 auto;">40問の解析テストへ進む →</button>
+  </div>
+
+  <div style="text-align:center;margin-top:8px;">
+    <button onclick="demoFill();goToPhase(1);" style="background:none;border:none;color:var(--text3);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">デモデータで自動入力してテスト →</button>
+  </div>
+</div>
+
+<!-- ======================== SECTION 1: QUESTIONNAIRE ======================== -->
+<div class="section" id="sec1">
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-tag">HEALTH ASSESSMENT</div>
+    <div class="card-title">体調・生活習慣の評価</div>
+    <div class="card-sub">直近2〜3ヶ月の体調を振り返り、各質問に0〜3の4段階で直感的にお答えください。</div>
+  </div>
+
+  <div id="questionnaire"></div>
+
+  <div style="margin:16px 0;text-align:center;">
+    <span id="qProgress" style="font-size:11px;color:var(--text2);"></span>
+  </div>
+
+  <div class="val-alert" id="valAlert1"></div>
+  <div class="btn-row">
+    <button class="btn btn-outline" onclick="goToPhase(0)" style="flex:0 0 auto;width:auto;padding:12px 20px;">← 戻る</button>
+    <button class="btn btn-gold" onclick="goToPhase(2)" style="flex:1;">解析を開始する</button>
+  </div>
+</div>
+
+<!-- ======================== SECTION 2: ANALYZING ======================== -->
+<div class="section" id="sec2">
+  <div class="analyzing">
+    <div style="font-size:40px;margin-bottom:16px;">🔬</div>
+    <h3>パーソナル・バイオプロファイルを分析中</h3>
+    <p>出生周期データと問診結果をクロス解析しています。<br>数秒間お待ちください。</p>
+    <div class="analyze-bar"><div class="analyze-bar-fill" id="analyzeBar"></div></div>
+    <div class="analyze-steps" id="analyzeSteps">
+      <div class="analyze-step" data-step="0"><div class="analyze-step-icon">⏳</div>出生周期からクロノタイプを算出中...</div>
+      <div class="analyze-step" data-step="1"><div class="analyze-step-icon">⏳</div>太陽周期の代謝パターンを解析中...</div>
+      <div class="analyze-step" data-step="2"><div class="analyze-step-icon">⏳</div>月周期のストレス応答特性を解析中...</div>
+      <div class="analyze-step" data-step="3"><div class="analyze-step-icon">⏳</div>問診データとの相関分析を実行中...</div>
+      <div class="analyze-step" data-step="4"><div class="analyze-step-icon">⏳</div>臓器別リスクスコアを統合算出中...</div>
+      <div class="analyze-step" data-step="5"><div class="analyze-step-icon">⏳</div>パーソナライズド・レポートを生成中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== SECTION 3: RESULTS ======================== -->
+<div class="section" id="sec3">
+  <div id="sendBanner" class="send-banner" style="display:none;"></div>
+  <div id="resultsContent"></div>
+</div>
+
+</div><!-- container -->
+
+<script>
+// ==========================================================================
+// 1. ASTRONOMICAL ENGINE - Sun & Moon sign calculation (hidden from user)
+// ==========================================================================
+
+// Sun sign date boundaries (approximate, sufficient for this purpose)
+const SUN_SIGNS = [
+  { sign: 'capricorn',   start: [1,1],   end: [1,19]  },
+  { sign: 'aquarius',    start: [1,20],  end: [2,18]  },
+  { sign: 'pisces',      start: [2,19],  end: [3,20]  },
+  { sign: 'aries',       start: [3,21],  end: [4,19]  },
+  { sign: 'taurus',      start: [4,20],  end: [5,20]  },
+  { sign: 'gemini',      start: [5,21],  end: [6,20]  },
+  { sign: 'cancer',      start: [6,21],  end: [7,22]  },
+  { sign: 'leo',         start: [7,23],  end: [8,22]  },
+  { sign: 'virgo',       start: [8,23],  end: [9,22]  },
+  { sign: 'libra',       start: [9,23],  end: [10,22] },
+  { sign: 'scorpio',     start: [10,23], end: [11,21] },
+  { sign: 'sagittarius', start: [11,22], end: [12,21] },
+  { sign: 'capricorn2',  start: [12,22], end: [12,31] },
+];
+
+const SIGN_TO_ELEMENT = {
+  aries:'fire', leo:'fire', sagittarius:'fire',
+  taurus:'earth', virgo:'earth', capricorn:'earth',
+  cancer:'water', scorpio:'water', pisces:'water',
+  gemini:'wind', libra:'wind', aquarius:'wind',
+};
+
+function getSunSign(month, day) {
+  for (const s of SUN_SIGNS) {
+    const afterStart = month > s.start[0] || (month === s.start[0] && day >= s.start[1]);
+    const beforeEnd = month < s.end[0] || (month === s.end[0] && day <= s.end[1]);
+    if (afterStart && beforeEnd) {
+      const sign = s.sign === 'capricorn2' ? 'capricorn' : s.sign;
+      return sign;
+    }
+  }
+  return 'capricorn';
+}
+
+// Moon sign calculation using simplified lunar ephemeris
+// Uses known moon position reference + average daily motion (~13.176 degrees/day)
+// Reference: Jan 1, 2000 00:00 UTC, Moon at approximately 5.4 degrees Aries
+function getMoonSign(year, month, day, hour) {
+  hour = hour || 12; // noon chart if unknown
+  
+  // Julian Day Number calculation
+  const a = Math.floor((14 - month) / 12);
+  const y = year + 4800 - a;
+  const m = month + 12 * a - 3;
+  const jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+  
+  // Days since J2000.0 (Jan 1.5, 2000)
+  const jd = jdn + (hour - 12) / 24;
+  const T = (jd - 2451545.0);
+  
+  // Simplified lunar longitude calculation
+  // Mean longitude of the Moon
+  const L0 = 218.3165 + 13.176396 * T;
+  // Mean anomaly of the Moon
+  const M = 134.9634 + 13.064993 * T;
+  // Mean anomaly of the Sun
+  const Ms = 357.5291 + 0.985600 * T;
+  // Moon's argument of latitude
+  const F = 93.2720 + 13.229350 * T;
+  // Mean elongation of the Moon
+  const D = 297.8502 + 12.190749 * T;
+  
+  const Mrad = M * Math.PI / 180;
+  const Msrad = Ms * Math.PI / 180;
+  const Frad = F * Math.PI / 180;
+  const Drad = D * Math.PI / 180;
+  
+  // Main perturbation terms
+  let longitude = L0
+    + 6.289 * Math.sin(Mrad)
+    + 1.274 * Math.sin(2 * Drad - Mrad)
+    + 0.658 * Math.sin(2 * Drad)
+    + 0.214 * Math.sin(2 * Mrad)
+    - 0.186 * Math.sin(Msrad)
+    - 0.114 * Math.sin(2 * Frad)
+    + 0.059 * Math.sin(2 * Drad - 2 * Mrad)
+    + 0.057 * Math.sin(2 * Drad - Msrad - Mrad)
+    + 0.053 * Math.sin(2 * Drad + Mrad)
+    + 0.046 * Math.sin(2 * Drad - Msrad)
+    - 0.041 * Math.sin(Msrad - Mrad)
+    - 0.035 * Math.sin(Drad)
+    - 0.030 * Math.sin(Msrad + Mrad);
+  
+  // Normalize to 0-360
+  longitude = ((longitude % 360) + 360) % 360;
+  
+  // Convert longitude to sign
+  const signIndex = Math.floor(longitude / 30);
+  const signs = ['aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn','aquarius','pisces'];
+  return signs[signIndex % 12];
+}
+
+function getElement(sign) {
+  return SIGN_TO_ELEMENT[sign] || 'earth';
+}
+
+// ==========================================================================
+// 2. THE 16-TYPE MATRIX (from bio_profile_matrix.jsx)
+// ==========================================================================
+
+const ELEMENTS = {
+  fire:  { label:'火', organ:'肝臓', system:'解毒・代謝', color:'#e05040', bg:'rgba(224,80,64,0.08)' },
+  earth: { label:'土', organ:'腸', system:'消化・吸収・排泄', color:'#d0a030', bg:'rgba(208,160,48,0.08)' },
+  water: { label:'水', organ:'腎臓', system:'濾過・水分調整', color:'#3088d0', bg:'rgba(48,136,208,0.08)' },
+  wind:  { label:'風', organ:'循環・神経系', system:'血管・自律神経', color:'#30b870', bg:'rgba(48,184,112,0.08)' },
+};
+
+const TYPES = [
+  { sun:'fire',moon:'fire',name:'過燃焼タイプ',subtitle:'肝臓フル稼働 × ストレスでさらに肝臓加速',risk1:95,risk2:0,riskGut:15,riskKidney:20,riskCirc:30,desc:'常にエネルギー全開で肝臓を酷使し、ストレス時にもブレーキが利かず肝臓に二重負荷がかかる。怒りや焦りが毒素排出の限界を超えさせやすい。',symptoms:['慢性的な倦怠感・朝起きられない','目の充血・ドライアイ','肌の黄ぐすみ・吹き出物','アルコールに弱くなった実感','右肋骨下の鈍い張り'],cascade:'肝臓の解毒処理が追いつかなくなると、未処理の毒素が血流に乗って全身に拡散。肌荒れ・慢性疲労・頭痛として表面化する。',detox:'肝臓を最優先で休ませるファスティング。苦味のあるハーブ（ダンデライオン・ミルクシスル系）が鍵。'},
+  { sun:'fire',moon:'earth',name:'代謝過負荷 → 腸崩壊タイプ',subtitle:'肝臓酷使 × ストレスで腸に波及',risk1:80,risk2:75,riskGut:75,riskKidney:15,riskCirc:20,desc:'日常的に肝臓をフル回転させて活動するが、追い込まれると腸で受け止める。暴飲暴食や胃腸の不調として現れやすい。',symptoms:['ストレス時の過食・暴飲暴食','便秘と下痢を交互に繰り返す','腹部膨満感・ガスが溜まりやすい','肌荒れ（特に顎周り）','食後の強い眠気'],cascade:'肝臓が処理しきれない毒素が胆汁を通じて腸に大量流入。腸内環境が悪化し、リーキーガット的な状態から全身の炎症へ連鎖。',detox:'まず肝臓の負担を軽減するファスティング後、腸内フローラ再建。食物繊維とプロバイオティクスの段階的導入。'},
+  { sun:'fire',moon:'water',name:'代謝過負荷 → 腎臓沈没タイプ',subtitle:'肝臓酷使 × ストレスで腎臓に波及',risk1:80,risk2:70,riskGut:20,riskKidney:70,riskCirc:25,desc:'エネルギッシュに肝臓を使い込むが、精神的に追い詰められると腎臓・水分代謝系が崩壊する。感情を溜め込むと一気にむくむタイプ。',symptoms:['ストレス時の強いむくみ（顔・脚）','夜間頻尿・尿の色の変化','腰の重だるさ・冷え','感情を我慢した後の体調崩壊','耳鳴り・めまい'],cascade:'肝臓で代謝された老廃物の最終処理を腎臓が担うが、ストレスで腎血流が低下し濾過機能が落ちる。水毒が全身に停滞。',detox:'肝臓ファスティング後に腎臓サポート。利尿作用のあるハーブ（ネトル・ジュニパー系）で水の巡りを回復。'},
+  { sun:'fire',moon:'wind',name:'代謝過負荷 → 神経過敏タイプ',subtitle:'肝臓酷使 × ストレスで循環・神経に波及',risk1:80,risk2:65,riskGut:15,riskKidney:20,riskCirc:65,desc:'行動力全開で肝臓を消耗させ、疲れが溜まると自律神経と血管系が乱れる。動悸や不眠として表面化しやすい。',symptoms:['突然の動悸・息切れ','不眠・入眠困難','手足の冷え（末端循環不良）','頭痛（特に側頭部）','集中力の急激な低下'],cascade:'肝臓の過負荷で血液の質が低下→血管壁への負担増→自律神経のバランス崩壊。交感神経優位が固定化しやすい。',detox:'肝臓デトックスを最優先しつつ、神経系を鎮めるハーブ（パッションフラワー・リンデン系）を併用。'},
+  { sun:'earth',moon:'fire',name:'消化依存 → 肝臓炎上タイプ',subtitle:'腸を酷使 × ストレスで肝臓が燃え上がる',risk1:75,risk2:70,riskGut:75,riskKidney:15,riskCirc:20,desc:'消化吸収に体力の多くを費やすタイプ。ストレスがかかると怒りや焦りとして噴出し、肝臓に一気に火がつく。',symptoms:['消化に時間がかかる・胃もたれ','ストレス時の怒りの爆発','便秘がちで毒素が再吸収されやすい','右肩の凝り・張り','甘いものへの強い渇望'],cascade:'腸で吸収された栄養の処理が肝臓に集中。腸内環境が悪化すると未消化物が肝臓に大量流入し、炎症カスケードが起動。',detox:'腸のクレンジングが最優先。その後、肝臓の解毒力を回復させる二段階アプローチ。'},
+  { sun:'earth',moon:'earth',name:'消化器集中負荷タイプ',subtitle:'腸フル稼働 × ストレスでも腸に集中',risk1:95,risk2:0,riskGut:95,riskKidney:10,riskCirc:10,desc:'あらゆる不調が消化器系に集約される体質。良くも悪くも「腸がすべてを物語る」タイプで、腸さえ整えば全身が劇的に改善する。',symptoms:['慢性的な便秘または下痢','お腹の張り・ガス','食物アレルギー・不耐症の傾向','肌トラブル全般','気分の浮き沈みが食事に連動'],cascade:'腸内環境の悪化がすべての起点。免疫系の70%が腸に集中しているため、腸の崩壊が全身の免疫力低下に直結する。',detox:'腸のリセットが最優先かつ最重要。ファスティングで腸壁を修復し、段階的に善玉菌を再構築する。'},
+  { sun:'earth',moon:'water',name:'消化依存 → 水毒蓄積タイプ',subtitle:'腸を酷使 × ストレスで腎臓が停滞',risk1:75,risk2:70,riskGut:75,riskKidney:70,riskCirc:15,desc:'消化に負担がかかりやすく、精神的に沈むと水分代謝まで滞る。身体が重くなり、むくみと便秘のダブルパンチに陥りやすい。',symptoms:['身体全体の重だるさ','むくみ＋便秘の同時発生','雨の日・低気圧での体調悪化','感情の鈍化・無気力感','下半身太り'],cascade:'腸からの水分吸収異常→腎臓への過負荷→全身の水分バランス崩壊。東洋医学でいう「水毒」の典型パターン。',detox:'腸と腎臓を同時にケアする必要がある。温性のハーブで水の巡りを起こしながら、腸内環境を再建。'},
+  { sun:'earth',moon:'wind',name:'消化依存 → 巡り停滞タイプ',subtitle:'腸を酷使 × ストレスで循環・神経が乱れる',risk1:75,risk2:60,riskGut:75,riskKidney:15,riskCirc:60,desc:'胃腸の負担が常にベースにあり、ストレスが加わると頭と身体の連携が乱れる。考えすぎて食べられない、または考えすぎて食べすぎるパターン。',symptoms:['ストレス性の食欲異常（過食or拒食）','頭痛と腹痛の同時発生','肩こり・首こりの慢性化','不安感・焦燥感','手汗・脇汗（自律神経由来）'],cascade:'腸-脳相関の乱れが核心。腸内環境の悪化がセロトニン産生を低下させ、自律神経のバランスが崩壊する。',detox:'腸内環境の立て直しが最優先。腸が整えば神経系も自然と回復するケースが多い。'},
+  { sun:'water',moon:'fire',name:'濾過過負荷 → 肝臓炎上タイプ',subtitle:'腎臓酷使 × ストレスで肝臓が燃え上がる',risk1:75,risk2:70,riskGut:15,riskKidney:75,riskCirc:20,desc:'水分代謝や感情処理に腎臓を常に使い、追い込まれると怒りや衝動として肝臓に火がつく。穏やかな人が突然キレるパターン。',symptoms:['普段は穏やかだが突然の激怒','むくみ→急な発熱・炎症','腰痛と肝臓エリアの同時不調','アルコールでの暴走','感情の抑圧→爆発サイクル'],cascade:'腎臓で処理しきれない老廃物が肝臓に回り、肝臓が緊急稼働。このサイクルが繰り返されると両臓器が同時に疲弊する。',detox:'腎臓の負担軽減が先決。水分代謝を正常化してから肝臓のケアに移行する二段階プロトコル。'},
+  { sun:'water',moon:'earth',name:'濾過過負荷 → 消化崩壊タイプ',subtitle:'腎臓酷使 × ストレスで腸に波及',risk1:75,risk2:70,riskGut:70,riskKidney:75,riskCirc:10,desc:'感受性が高く腎臓に常に負荷がかかり、心が折れると胃腸に直撃する。お腹を下す＝心のSOSという構図が明確なタイプ。',symptoms:['緊張・不安時の腹痛・下痢','むくみと消化不良のセット','食欲の極端な変動','低体温傾向','感情に引きずられる体調'],cascade:'腎臓の水分調整機能低下→腸の水分バランス崩壊→下痢と便秘の交互。感情が直接消化器に影響する回路が強い。',detox:'腎臓と腸の水分バランスを同時に整える。温かいハーブティーでの緩やかなデトックスが最適。'},
+  { sun:'water',moon:'water',name:'濾過系集中負荷タイプ',subtitle:'腎臓フル稼働 × ストレスでも腎臓に集中',risk1:95,risk2:0,riskGut:10,riskKidney:95,riskCirc:15,desc:'水分代謝と感情処理がすべて腎臓に集中する体質。「水」の問題（むくみ・冷え・感情の波）がライフテーマになりやすい。',symptoms:['慢性的なむくみ（特に下半身）','冷え性・低体温','感情の波が激しい','頻尿または尿量減少','恐怖心・不安感が強い'],cascade:'腎臓の濾過機能低下が全身の水分バランスを崩壊。冷え→代謝低下→さらに腎臓に負担という悪循環に入りやすい。',detox:'腎臓を最優先で温め、水の巡りを回復させることがすべての起点。身体を冷やすものを徹底排除。'},
+  { sun:'water',moon:'wind',name:'濾過過負荷 → 神経漂流タイプ',subtitle:'腎臓酷使 × ストレスで循環・神経が浮遊',risk1:75,risk2:65,riskGut:10,riskKidney:75,riskCirc:65,desc:'感受性の鋭さで腎臓を消耗し、限界を超えると思考と神経がフリーズする。「頭が真っ白になる」「身体が動かない」という形で出やすい。',symptoms:['フリーズ反応（思考停止）','めまい・ふらつき','むくみ＋手足のしびれ','過敏性（音・光・匂い）','離人感・現実感の喪失'],cascade:'腎臓の機能低下で体液の電解質バランスが崩れ、神経伝達に直接影響。自律神経の調整機能が不安定化する。',detox:'腎臓ケアで水分バランスを安定させつつ、神経系を鎮静するハーブを併用。ミネラル補給が重要。'},
+  { sun:'wind',moon:'fire',name:'循環過敏 → 肝臓炎上タイプ',subtitle:'循環・神経を酷使 × ストレスで肝臓に火がつく',risk1:75,risk2:70,riskGut:10,riskKidney:15,riskCirc:75,desc:'頭の回転が速く神経をフル稼働させるが、限界を超えると衝動性として肝臓に噴出。「考えすぎ→キレる」のサイクルを持つ。',symptoms:['思考の暴走・止まらない頭','突発的な怒りやイライラ','偏頭痛（血管拡張型）','不眠→翌日の肝臓疲労','カフェイン依存'],cascade:'自律神経の過緊張→交感神経優位固定→肝臓への血流パターン異常。睡眠の質低下がさらに肝臓の回復を阻害する。',detox:'まず神経系を鎮めることが先決。その上で肝臓のデトックス。順序を間違えると逆効果になりやすい。'},
+  { sun:'wind',moon:'earth',name:'循環過敏 → 消化停滞タイプ',subtitle:'循環・神経を酷使 × ストレスで腸が止まる',risk1:75,risk2:70,riskGut:70,riskKidney:10,riskCirc:75,desc:'常に頭を使い神経が張り詰め、ストレスの出口が腸に向かう。「考えすぎて食欲がなくなる」「不安でお腹が痛くなる」の典型。',symptoms:['ストレス性の便秘','食欲不振・胃の締めつけ','腸の蠕動運動低下','顎関節の緊張・歯ぎしり','過敏性腸症候群的な症状'],cascade:'自律神経の乱れが腸の蠕動運動を直接抑制。腸-脳相関が最も強く出るタイプで、精神状態が腸の状態とほぼ一致する。',detox:'神経系のリラクゼーションが腸の回復の前提条件。呼吸法とハーブの組み合わせが効果的。'},
+  { sun:'wind',moon:'water',name:'循環過敏 → 腎臓沈降タイプ',subtitle:'循環・神経を酷使 × ストレスで腎臓が沈む',risk1:75,risk2:65,riskGut:10,riskKidney:65,riskCirc:75,desc:'知的活動で神経を使い果たし、限界を超えると身体が「沈む」。むくみ・冷え・動けなさとして腎臓に出る。燃え尽き型の体質。',symptoms:['燃え尽き後の強いむくみ','思考クリアだが身体が動かない','下半身の冷え・重さ','朝起きられない（副腎疲労的）','涙もろくなる'],cascade:'神経系の過負荷→副腎疲労→腎臓機能低下。エネルギーの「上半身集中・下半身枯渇」が顕著になる。',detox:'神経を鎮めつつ腎臓を温める。アダプトゲン系ハーブとの組み合わせで副腎もサポート。'},
+  { sun:'wind',moon:'wind',name:'循環・神経系集中負荷タイプ',subtitle:'循環・神経フル稼働 × ストレスでも神経に集中',risk1:95,risk2:0,riskGut:10,riskKidney:15,riskCirc:95,desc:'「巡り」のすべてが課題。血流・神経伝達・思考の流れ、すべてが滞るか暴走するかの両極端になりやすい。',symptoms:['慢性的な肩こり・首こり','不眠・浅い睡眠','手足の冷え＋頭ののぼせ','動悸・不整脈感','思考の空転・決断できない'],cascade:'自律神経の調整不全が血管の収縮・拡張を不安定化。血圧の変動、体温調節の乱れとして全身に波及する。',detox:'循環と神経を同時に整えるアプローチ。温冷交代浴的な刺激と鎮静ハーブの組み合わせ。呼吸法が最も効くタイプ。'},
+];
+
+function getType(sunEl, moonEl) {
+  return TYPES.find(t => t.sun === sunEl && t.moon === moonEl);
+}
+
+// ==========================================================================
+// 3. QUESTIONNAIRE DATA - 40 questions across 4 organ categories
+//    Including hidden "trap" questions for moon sign boundary validation
+// ==========================================================================
+
+const QUESTIONS = [
+  // CATEGORY: GUT (腸・消化器系) - Questions 1-10
+  { id:1, cat:'gut', text:'食後に胃もたれや膨満感を感じることがある', trap:false },
+  { id:2, cat:'gut', text:'便秘、または下痢になりやすい', trap:false },
+  { id:3, cat:'gut', text:'お腹にガスが溜まりやすい', trap:false },
+  { id:4, cat:'gut', text:'特定の食べ物で体調が悪くなることがある', trap:false },
+  { id:5, cat:'gut', text:'食後に強い眠気に襲われる', trap:false },
+  { id:6, cat:'gut', text:'ストレスを感じると食欲が極端に変動する（過食または食欲不振）', trap:'moon_earth_wind' },
+  { id:7, cat:'gut', text:'肌荒れやニキビができやすい（特に顎まわり）', trap:false },
+  { id:8, cat:'gut', text:'口臭や舌苔（ぜったい）が気になる', trap:false },
+  { id:9, cat:'gut', text:'腹痛が精神的なストレスと連動しやすい', trap:'moon_earth' },
+  { id:10, cat:'gut', text:'乳製品や小麦製品を食べると調子が悪くなる', trap:false },
+  
+  // CATEGORY: LIVER (肝臓・解毒系) - Questions 11-20
+  { id:11, cat:'liver', text:'十分に寝ても朝起きたとき疲れが残っている', trap:false },
+  { id:12, cat:'liver', text:'目が疲れやすい、または充血しやすい', trap:false },
+  { id:13, cat:'liver', text:'以前よりアルコールに弱くなった', trap:false },
+  { id:14, cat:'liver', text:'脂っこいものを食べると気持ち悪くなる', trap:false },
+  { id:15, cat:'liver', text:'肌のくすみや黄ぐすみが気になる', trap:false },
+  { id:16, cat:'liver', text:'怒りやイライラが急に爆発することがある', trap:'moon_fire' },
+  { id:17, cat:'liver', text:'右肋骨の下あたりに鈍い張りや重さを感じる', trap:false },
+  { id:18, cat:'liver', text:'甘いものやカフェインへの依存感がある', trap:false },
+  { id:19, cat:'liver', text:'右肩の凝りが慢性的にある', trap:false },
+  { id:20, cat:'liver', text:'解毒を意識した食事やファスティングを試したいと感じる', trap:false },
+  
+  // CATEGORY: KIDNEY (腎臓・水分代謝系) - Questions 21-30
+  { id:21, cat:'kidney', text:'顔や脚がむくみやすい', trap:false },
+  { id:22, cat:'kidney', text:'冷え性で手足の末端が冷たい', trap:false },
+  { id:23, cat:'kidney', text:'夜間にトイレに起きることがある', trap:false },
+  { id:24, cat:'kidney', text:'腰が重い、または腰痛がある', trap:false },
+  { id:25, cat:'kidney', text:'雨の日や低気圧のとき体調が悪くなる', trap:'moon_water' },
+  { id:26, cat:'kidney', text:'恐怖心や不安感が強い方だ', trap:'moon_water' },
+  { id:27, cat:'kidney', text:'水分を取りすぎ、または取らなすぎの自覚がある', trap:false },
+  { id:28, cat:'kidney', text:'耳鳴りやめまいが起きることがある', trap:false },
+  { id:29, cat:'kidney', text:'感情を溜め込みやすく、その後体調が崩れる', trap:'moon_water_fire' },
+  { id:30, cat:'kidney', text:'体が全体的に重だるく感じることが多い', trap:false },
+  
+  // CATEGORY: CIRCULATION (循環・神経系) - Questions 31-40
+  { id:31, cat:'circ', text:'手足の末端が冷える（特に冬以外でも）', trap:false },
+  { id:32, cat:'circ', text:'動悸や息切れを感じることがある', trap:false },
+  { id:33, cat:'circ', text:'肩こり・首こりが慢性的にある', trap:false },
+  { id:34, cat:'circ', text:'不眠、または睡眠の質が低い', trap:false },
+  { id:35, cat:'circ', text:'思考が止まらない、または頭が空転することがある', trap:'moon_wind' },
+  { id:36, cat:'circ', text:'頭痛（特に側頭部）が起きやすい', trap:false },
+  { id:37, cat:'circ', text:'立ちくらみやふらつきがある', trap:false },
+  { id:38, cat:'circ', text:'音や光、匂いに過敏になることがある', trap:'moon_wind_water' },
+  { id:39, cat:'circ', text:'血圧が高い、または低いと指摘されたことがある', trap:false },
+  { id:40, cat:'circ', text:'集中力が急激に低下する瞬間がある', trap:false },
+];
+
+const CAT_META = {
+  gut:    { label:'消化器系', sub:'腸・胃の状態', icon:'🧬', color:'var(--gut)', bg:'var(--gut-bg)' },
+  liver:  { label:'肝臓・解毒系', sub:'代謝・デトックスの状態', icon:'🧪', color:'var(--liver)', bg:'var(--liver-bg)' },
+  kidney: { label:'腎臓・水分代謝系', sub:'水分調整・濾過の状態', icon:'💧', color:'var(--kidney)', bg:'var(--kidney-bg)' },
+  circ:   { label:'循環・神経系', sub:'血管・自律神経の状態', icon:'🩸', color:'var(--circ)', bg:'var(--circ-bg)' },
+};
+
+// ==========================================================================
+// 3.5. SUPABASE DATABASE
+// ==========================================================================
+
+const SUPABASE_URL = 'https://fnzimwshyctxkxyzfkpv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuemltd3NoeWN0eGt4eXpma3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NzE0OTEsImV4cCI6MjA4ODU0NzQ5MX0.Yt1DjKFA8L7IlG8ap-cr0Cv3D2TlBKesu3SNnSjB_UU';
+let db = null;
+try { db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn('Supabase init:', e); }
+
+// ==========================================================================
+// 4. STATE MANAGEMENT
+// ==========================================================================
+
+let currentPhase = 0;
+const answers = {};
+let shuffledQuestions = []; // Randomized question order
+
+// ==========================================================================
+// 5. RENDER QUESTIONNAIRE (SHUFFLED - no category headers shown to user)
+// ==========================================================================
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function renderQuestionnaire() {
+  const container = document.getElementById('questionnaire');
+  
+  // Shuffle all 40 questions randomly (no category grouping visible to user)
+  shuffledQuestions = shuffleArray([...QUESTIONS]);
+  
+  let html = `<div class="card">
+    <div class="q-scale-legend" style="margin-bottom:4px;">
+      <div style="flex:1;"></div>
+      <div class="q-scale-lbl" style="color:var(--green);">全く<br>ない</div>
+      <div class="q-scale-lbl">たまに</div>
+      <div class="q-scale-lbl">よく<br>ある</div>
+      <div class="q-scale-lbl" style="color:var(--red);">常に<br>ある</div>
+    </div>`;
+  
+  shuffledQuestions.forEach((q, idx) => {
+    html += `<div class="q-row" id="qrow_${q.id}">
+      <div class="q-num">${String(idx + 1).padStart(2,'0')}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="q-btns">
+        ${[0,1,2,3].map(v => `<button class="r-btn" data-qid="${q.id}" data-val="${v}" onclick="setAnswer(${q.id},${v},this)">${v}</button>`).join('')}
+      </div>
+    </div>`;
+  });
+  
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function setAnswer(qid, val, btn) {
+  answers[qid] = val;
+  
+  // Update button styles
+  const row = document.getElementById(`qrow_${qid}`);
+  row.classList.remove('unanswered');
+  row.querySelectorAll('.r-btn').forEach(b => {
+    b.className = 'r-btn';
+  });
+  if (val <= 1) btn.classList.add('sel');
+  else if (val === 2) btn.classList.add('sel-high');
+  else btn.classList.add('sel-crit');
+  
+  updateQProgress();
+}
+
+function updateQProgress() {
+  const total = QUESTIONS.length;
+  const answered = Object.keys(answers).length;
+  const el = document.getElementById('qProgress');
+  if (el) el.textContent = `回答済み: ${answered} / ${total}`;
+}
+
+// ==========================================================================
+// 6. PHASE NAVIGATION
+// ==========================================================================
+
+function goToPhase(phase) {
+  // Validation
+  if (phase === 1) {
+    const name = document.getElementById('userName').value.trim();
+    const bd = document.getElementById('userBirthDate').value;
+    if (!name || !bd) {
+      const alert = document.getElementById('valAlert0');
+      alert.textContent = 'お名前と生年月日は必須です。';
+      alert.style.display = 'block';
+      if (!name) document.getElementById('userName').classList.add('error');
+      if (!bd) document.getElementById('userBirthDate').classList.add('error');
+      return;
+    }
+    document.getElementById('valAlert0').style.display = 'none';
+    document.getElementById('userName').classList.remove('error');
+    document.getElementById('userBirthDate').classList.remove('error');
+  }
+  
+  if (phase === 2) {
+    // Check at least 30 answers
+    const answered = Object.keys(answers).length;
+    if (answered < 30) {
+      const alert = document.getElementById('valAlert1');
+      alert.textContent = `最低30問以上への回答が必要です。現在 ${answered}/40 問回答済みです。`;
+      alert.style.display = 'block';
+      // Mark unanswered
+      QUESTIONS.forEach(q => {
+        if (answers[q.id] === undefined) {
+          document.getElementById(`qrow_${q.id}`).classList.add('unanswered');
+        }
+      });
+      return;
+    }
+    document.getElementById('valAlert1').style.display = 'none';
+  }
+  
+  // Hide all sections
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  
+  // Show target
+  document.getElementById(`sec${phase}`).classList.add('active');
+  currentPhase = phase;
+  
+  // Update phase bar
+  document.querySelectorAll('.phase-step').forEach((el, i) => {
+    el.classList.remove('done','active');
+    if (i < phase) el.classList.add('done');
+    if (i === phase) el.classList.add('active');
+  });
+  document.querySelectorAll('#phaseLabels span').forEach((el, i) => {
+    el.className = '';
+    if (i < phase) el.className = 'done';
+    if (i === phase) el.className = 'active';
+  });
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Start analysis if phase 2
+  if (phase === 2) {
+    runAnalysis();
+  }
+}
+
+// ==========================================================================
+// 7. ANALYSIS ENGINE
+// ==========================================================================
+
+function runAnalysis() {
+  const steps = document.querySelectorAll('.analyze-step');
+  const bar = document.getElementById('analyzeBar');
+  let step = 0;
+  const totalSteps = steps.length;
+  
+  function advanceStep() {
+    if (step > 0) {
+      steps[step - 1].classList.remove('active');
+      steps[step - 1].classList.add('done');
+      steps[step - 1].querySelector('.analyze-step-icon').textContent = '✓';
+    }
+    if (step < totalSteps) {
+      steps[step].classList.add('active');
+      steps[step].querySelector('.analyze-step-icon').textContent = '⚡';
+      bar.style.width = `${((step + 1) / totalSteps) * 100}%`;
+      step++;
+      setTimeout(advanceStep, 600 + Math.random() * 400);
+    } else {
+      // Analysis complete
+      setTimeout(() => {
+        computeResults();
+        goToPhase(3);
+      }, 500);
+    }
+  }
+  
+  bar.style.width = '0%';
+  steps.forEach(s => { s.classList.remove('active','done'); s.querySelector('.analyze-step-icon').textContent = '⏳'; });
+  setTimeout(advanceStep, 300);
+}
+
+// ==========================================================================
+// 8. HYBRID SCORING MODEL
+// ==========================================================================
+
+function computeResults() {
+  const bd = document.getElementById('userBirthDate').value;
+  const bt = document.getElementById('userBirthTime').value;
+  const name = document.getElementById('userName').value.trim();
+  
+  const [year, month, day] = bd.split('-').map(Number);
+  const hour = bt ? parseInt(bt.split(':')[0]) : 12; // noon chart if unknown
+  
+  // 1. Get Sun & Moon signs (hidden astrology engine)
+  const sunSign = getSunSign(month, day);
+  const moonSign = getMoonSign(year, month, day, hour);
+  
+  const sunElement = getElement(sunSign);
+  const moonElement = getElement(moonSign);
+  
+  // 2. Get base type from 16-type matrix
+  const bodyType = getType(sunElement, moonElement);
+  
+  // 3. Calculate current symptom scores from questionnaire
+  const catScores = {};
+  for (const cat of ['gut','liver','kidney','circ']) {
+    const qs = QUESTIONS.filter(q => q.cat === cat);
+    let sum = 0, count = 0;
+    qs.forEach(q => {
+      if (answers[q.id] !== undefined) {
+        sum += answers[q.id];
+        count++;
+      }
+    });
+    // Normalize to 0-100
+    catScores[cat] = count > 0 ? Math.round((sum / (count * 3)) * 100) : 0;
+  }
+  
+  // 4. Moon sign boundary validation using trap questions
+  const moonValidation = validateMoonSign(moonElement);
+  
+  // 5. HYBRID SCORING: alpha * innate + beta * current + gamma * cross_factor
+  const alpha = 0.45; // Weight for innate risk
+  const beta = 0.45;  // Weight for current symptoms
+  const gamma = 0.10; // Cross-correlation bonus
+  
+  const innateScores = {
+    liver:  bodyType.sun === 'fire' ? bodyType.risk1 : (bodyType.moon === 'fire' ? Math.max(bodyType.risk2 || 0, bodyType.riskGut || 0, 40) : Math.max(15, bodyType.riskGut || 0)),
+    gut:    bodyType.sun === 'earth' ? bodyType.risk1 : (bodyType.moon === 'earth' ? Math.max(bodyType.risk2 || 0, bodyType.riskGut, 40) : bodyType.riskGut),
+    kidney: bodyType.sun === 'water' ? bodyType.risk1 : (bodyType.moon === 'water' ? Math.max(bodyType.risk2 || 0, bodyType.riskKidney, 40) : bodyType.riskKidney),
+    circ:   bodyType.sun === 'wind' ? bodyType.risk1 : (bodyType.moon === 'wind' ? Math.max(bodyType.risk2 || 0, bodyType.riskCirc, 40) : bodyType.riskCirc),
+  };
+  
+  const finalScores = {};
+  const organMap = { gut:'gut', liver:'liver', kidney:'kidney', circ:'circ' };
+  
+  for (const [key, cat] of Object.entries(organMap)) {
+    const innate = innateScores[key];
+    const current = catScores[cat];
+    
+    // Cross-correlation: if both innate AND current are high, boost further
+    const crossFactor = (innate > 50 && current > 50) ? 15 : 
+                        (innate > 70 && current < 30) ? 8 :  // hidden risk
+                        (innate < 30 && current > 70) ? 5 : 0;  // lifestyle issue
+    
+    finalScores[key] = Math.min(99, Math.round(alpha * innate + beta * current + gamma * crossFactor * 10));
+  }
+  
+  // 6. Determine profile classification
+  const profile = classifyProfile(innateScores, catScores, finalScores);
+  
+  // 7. Render results
+  renderResults({
+    name, year, month, day,
+    sunElement, moonElement, sunSign, moonSign,
+    bodyType, catScores, innateScores, finalScores, profile, moonValidation,
+    answers: {...answers},
+  });
+}
+
+function validateMoonSign(moonElement) {
+  // Check trap questions that correspond to moon element behaviors
+  let matchScore = 0;
+  let totalTraps = 0;
+  
+  QUESTIONS.forEach(q => {
+    if (!q.trap) return;
+    const val = answers[q.id] || 0;
+    
+    if (q.trap === 'moon_fire' && moonElement === 'fire' && val >= 2) { matchScore++; }
+    if (q.trap === 'moon_earth' && moonElement === 'earth' && val >= 2) { matchScore++; }
+    if (q.trap === 'moon_earth_wind' && (moonElement === 'earth' || moonElement === 'wind') && val >= 2) { matchScore++; }
+    if (q.trap === 'moon_water' && moonElement === 'water' && val >= 2) { matchScore++; }
+    if (q.trap === 'moon_water_fire' && (moonElement === 'water' || moonElement === 'fire') && val >= 2) { matchScore++; }
+    if (q.trap === 'moon_wind' && moonElement === 'wind' && val >= 2) { matchScore++; }
+    if (q.trap === 'moon_wind_water' && (moonElement === 'wind' || moonElement === 'water') && val >= 2) { matchScore++; }
+    
+    totalTraps++;
+  });
+  
+  return { matchScore, totalTraps, confidence: totalTraps > 0 ? matchScore / totalTraps : 0.5 };
+}
+
+function classifyProfile(innate, current, final) {
+  // Find top 2 risk organs
+  const sorted = Object.entries(final).sort((a, b) => b[1] - a[1]);
+  const primary = sorted[0];
+  const secondary = sorted[1];
+  
+  // Classify the relationship between innate and current
+  const primaryInnate = innate[primary[0]];
+  const primaryCurrent = current[primary[0] === 'circ' ? 'circ' : primary[0]];
+  
+  let profileType;
+  if (primaryInnate > 60 && primaryCurrent > 50) {
+    profileType = 'critical'; // Both high - needs immediate intervention
+  } else if (primaryInnate > 60 && primaryCurrent <= 30) {
+    profileType = 'latent';  // High innate but low current - hidden time bomb
+  } else if (primaryInnate <= 30 && primaryCurrent > 50) {
+    profileType = 'lifestyle'; // Low innate but high current - lifestyle damage
+  } else {
+    profileType = 'balanced'; // Relatively OK
+  }
+  
+  return { primaryOrgan: primary, secondaryOrgan: secondary, profileType };
+}
+
+// ==========================================================================
+// 9. RESULTS RENDERER
+// ==========================================================================
+
+function renderResults(data) {
+  const { name, year, month, day, sunElement, moonElement, bodyType, catScores, innateScores, finalScores, profile, moonValidation } = data;
+  
+  const container = document.getElementById('resultsContent');
+  
+  const organLabels = {
+    liver: { name:'肝臓', sub:'解毒・代謝', color:'var(--liver)', icon:'🧪' },
+    gut: { name:'腸', sub:'消化・吸収', color:'var(--gut)', icon:'🧬' },
+    kidney: { name:'腎臓', sub:'濾過・水分', color:'var(--kidney)', icon:'💧' },
+    circ: { name:'循環・神経系', sub:'血管・自律神経', color:'var(--circ)', icon:'🩸' },
+  };
+  
+  function riskLevel(val) {
+    if (val >= 70) return { label:'高リスク', color:'var(--red)', cls:'crit' };
+    if (val >= 50) return { label:'注意', color:'#d07830', cls:'warn' };
+    if (val >= 30) return { label:'やや注意', color:'var(--gut)', cls:'mid' };
+    return { label:'良好', color:'var(--green)', cls:'ok' };
+  }
+  
+  function profileTypeText(type) {
+    switch(type) {
+      case 'critical': return { title:'統合リスク集中型', desc:'先天的な体質傾向と現在の生活習慣の両方が同じ臓器に負荷をかけています。放置すると症状が加速する可能性が高く、集中的な介入を強く推奨します。', color:'var(--red)' };
+      case 'latent': return { title:'潜在リスク型（隠れ時限爆弾）', desc:'あなたの生まれ持った生体リズムは特定の臓器に負荷がかかりやすいクロノタイプですが、現在は症状として表面化していません。しかし、この体質は一度バランスが崩れると急速に悪化する特性を持つため、今のうちからの予防的ケアが極めて重要です。', color:'var(--gold)' };
+      case 'lifestyle': return { title:'生活習慣ダメージ型', desc:'本来の生体リズムでは頑健な臓器ですが、現在のライフスタイルが本来のキャパシティを超えた負担をかけています。生活習慣の修正で比較的早期に改善が見込めます。', color:'#d07830' };
+      default: return { title:'バランス維持型', desc:'現時点では大きなリスク集中は見られませんが、定期的なモニタリングで体質の変化を追跡することを推奨します。', color:'var(--green)' };
+    }
+  }
+  
+  const pType = profileTypeText(profile.profileType);
+  const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
+  
+  // Chrono type name mapping (hide astrology, show science)
+  const chronoNames = {
+    fire: '高代謝活性型',
+    earth: '消化器優位型',
+    water: '水分代謝感受型',
+    wind: '神経循環活性型',
+  };
+  
+  let html = '';
+  
+  // ---- HEADER ----
+  html += `<div class="results-header">
+    <div class="results-name">${name}</div>
+    <div class="results-meta">
+      パーソナル・バイオプロファイル解析結果<br>
+      生年月日: ${year}年${month}月${day}日 ｜ 解析日: ${new Date().toLocaleDateString('ja-JP')}
+    </div>
+  </div>`;
+  
+  // ---- TYPE REVEAL ----
+  html += `<div class="type-reveal">
+    <div class="type-reveal-tag">YOUR CHRONO-TYPE</div>
+    <div class="type-badge">${bodyType.name}</div>
+    <div class="type-name">${bodyType.subtitle}</div>
+    <div class="type-subtitle">
+      基盤クロノタイプ: ${chronoNames[sunElement]} × ストレス応答: ${chronoNames[moonElement]}
+    </div>
+  </div>`;
+  
+  // ---- PROFILE CLASSIFICATION ----
+  html += `<div class="detail-card" style="border-left:3px solid ${pType.color};">
+    <div class="detail-tag">PROFILE CLASSIFICATION</div>
+    <div class="detail-title" style="color:${pType.color};">${pType.title}</div>
+    <div class="detail-body">${pType.desc}</div>
+  </div>`;
+  
+  // ---- RISK OVERVIEW CARDS ----
+  html += `<div style="margin-bottom:14px;">
+    <div style="font-size:9px;color:var(--gold);letter-spacing:0.2em;font-weight:700;margin-bottom:10px;">ORGAN RISK SCORES</div>
+  </div>`;
+  html += `<div class="risk-grid">`;
+  
+  sorted.forEach(([key, val], idx) => {
+    const organ = organLabels[key];
+    const level = riskLevel(val);
+    const innate = innateScores[key];
+    const current = catScores[key];
+    const isPrimary = idx === 0;
+    
+    html += `<div class="risk-card ${isPrimary ? 'primary' : ''}">
+      <div class="risk-card-header">
+        <div>
+          <div style="font-size:14px;margin-bottom:4px;">${organ.icon}</div>
+          <div class="risk-card-label">${organ.name}</div>
+          <div style="font-size:9px;color:var(--text3);">${organ.sub}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="risk-card-pct" style="color:${level.color};">${val}</div>
+          <div class="risk-card-tag" style="color:${level.color};background:${level.color}18;border:1px solid ${level.color}33;">${level.label}</div>
+        </div>
+      </div>
+      <div class="risk-bar">
+        <div class="risk-bar-fill" style="width:${val}%;background:${level.color};"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <div style="font-size:9px;color:var(--text3);">先天的傾向: <span style="color:${organ.color};">${innate}%</span></div>
+        <div style="font-size:9px;color:var(--text3);">現状スコア: <span style="color:var(--text2);">${current}%</span></div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  
+  // ---- BODY HEATMAP (SVG) ----
+  html += renderBodyHeatmap(finalScores);
+  
+  // ---- RADAR CHART ----
+  html += `<div class="chart-card">
+    <div class="chart-card-title">RISK DISTRIBUTION RADAR</div>
+    <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+  </div>`;
+  
+  // ---- INNATE vs CURRENT COMPARISON CHART ----
+  html += `<div class="chart-card">
+    <div class="chart-card-title">先天的体質リスク × 現状症状スコア 比較</div>
+    <div class="chart-wrap" style="max-width:500px;"><canvas id="barChart"></canvas></div>
+  </div>`;
+  
+  // ---- SEASONAL RISK CALENDAR ----
+  html += renderSeasonalRisk(sunElement, moonElement, finalScores);
+  
+  // ---- ANALYSIS CONFIDENCE ----
+  const confPct = Math.round(55 + moonValidation.confidence * 30 + (Object.keys(answers).length / 40) * 15);
+  html += `<div class="detail-card">
+    <div class="detail-tag">ANALYSIS CONFIDENCE</div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">分析信頼度: <span style="color:var(--gold);">${confPct}%</span></div>
+        <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:8px;">
+          <div style="width:${confPct}%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:3px;"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);line-height:1.7;">
+          回答数: ${Object.keys(answers).length}/40問 ｜ クロノタイプ整合性: ${moonValidation.confidence >= 0.5 ? '高' : '中'}
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.8;flex:1;min-width:200px;">
+        出生周期データと問診結果の整合性が${moonValidation.confidence >= 0.5 ? '高く' : 'やや低く'}、${moonValidation.confidence >= 0.5 ? '先天的体質と現在の症状パターンに一貫した傾向が検出されました。' : '先天的体質と現在の症状に一部乖離がみられ、生活環境の変化が影響している可能性があります。'}
+      </div>
+    </div>
+  </div>`;
+  
+  // ---- TYPE DETAIL ----
+  html += `<div class="detail-card">
+    <div class="detail-tag">CHRONO-TYPE ANALYSIS</div>
+    <div class="detail-title">${bodyType.name}の<span>体質特性</span></div>
+    <div class="detail-body">${bodyType.desc}</div>
+    <div style="margin-top:16px;">
+      <div style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:0.14em;margin-bottom:10px;">
+        このタイプに特徴的な症状パターン
+      </div>
+      <div class="symptom-tags">
+        ${bodyType.symptoms.map(s => `<span class="symptom-tag">${s}</span>`).join('')}
+      </div>
+    </div>
+  </div>`;
+  
+  // ---- CASCADE WARNING ----
+  html += `<div class="cascade-card">
+    <div class="cascade-title">⚠ 崩壊カスケード（放置した場合の連鎖シナリオ）</div>
+    <div class="cascade-body">${bodyType.cascade}</div>
+  </div>`;
+  
+  // ---- DETOX STRATEGY ----
+  html += `<div class="detox-card">
+    <div class="detox-title">✦ 推奨デトックス戦略</div>
+    <div class="detox-body">${bodyType.detox}</div>
+  </div>`;
+  
+  // ---- PERSONALIZED TIMELINE ----
+  html += renderTimeline(bodyType, sunElement, moonElement, finalScores);
+  
+  // ---- SCIENCE NOTE ----
+  html += `<div class="detail-card" style="border-left:3px solid var(--gold);">
+    <div class="detail-tag">METHODOLOGY NOTE</div>
+    <div class="detail-body" style="font-size:11px;">
+      本分析は、時間生物学（クロノバイオロジー）に基づく出生周期データと、臨床栄養学の健康評価フレームワーク（Health Assessment Questionnaire）に準拠した40問の問診データを、独自のハイブリッドスコアリングモデルで統合算出しています。<br><br>
+      出生時の光周期が生体時計（視交叉上核）にインプリンティングされるメカニズムは、ヴァンダービルト大学等の研究で示唆されており、本アルゴリズムはこれらの知見をベースに、先天的代謝リズム（クロノタイプ）と後天的な生活習慣の乖離を多角的に検出するよう設計されています。<br><br>
+      <strong style="color:var(--gold);">重要：</strong>本解析は医療行為・医学的判断ではありません。健康上の懸念がある場合は、必ず医療専門家にご相談ください。
+    </div>
+  </div>`;
+  
+  // ---- CTA ----
+  html += `<div class="cta-card">
+    <div class="cta-tag">NEXT STEP</div>
+    <div class="cta-title">あなた専用の体質最適化プログラムへ</div>
+    <div class="cta-body">
+      本解析で特定されたリスク傾向に基づき、パーソナライズされたデトックスプラン・栄養戦略・生活習慣の最適化プログラムをご提案することが可能です。<br><br>
+      生まれ持った体質を変えることはできませんが、<strong>その体質に最適化されたケア</strong>を行うことで、本来のパフォーマンスを最大限に引き出すことができます。
+    </div>
+  </div>`;
+  
+  // ---- ACTION BUTTONS ----
+  html += `<div class="btn-row" style="margin-top:20px;">
+    <button class="btn btn-outline" onclick="window.print()" style="flex:1;">印刷 / PDF保存</button>
+    <button class="btn btn-outline" onclick="goToPhase(0)" style="flex:1;">最初からやり直す</button>
+  </div>`;
+  
+  container.innerHTML = html;
+  
+  // Render charts after DOM update
+  setTimeout(() => {
+    renderRadarChart(finalScores);
+    renderBarChart(innateScores, catScores, finalScores);
+  }, 100);
+  
+  // Save to Supabase for coach dashboard
+  saveBioProfile(data);
+}
+
+// ==========================================================================
+// 9.5 SAVE TO SUPABASE (uses 'diagnoses' table for coach dashboard compatibility)
+// ==========================================================================
+
+async function saveBioProfile(data) {
+  const banner = document.getElementById('sendBanner');
+  banner.className = 'send-banner sending';
+  banner.style.display = 'block';
+  banner.textContent = 'データをコーチに送信中...';
+  
+  if (!db) {
+    banner.className = 'send-banner err';
+    banner.textContent = '⚠ オフラインモード。印刷してコーチへ直接お渡しください。';
+    return;
+  }
+  
+  try {
+    // Store bio-profile data in the 'diagnoses' table using its JSON columns.
+    // The 'scores' column stores all computed scores, and 'answers' stores raw responses.
+    // This allows the coach dashboard to read via db.from('diagnoses').select('*').
+    //
+    // Database schema reference (bio_profile_matrix.jsx):
+    //   scores: { liver, gut, kidney, circ, innate_liver, innate_gut, innate_kidney, innate_circ,
+    //             symptom_liver, symptom_gut, symptom_kidney, symptom_circ }
+    //   answers: { "1": 0-3, "2": 0-3, ... "40": 0-3 }
+    //   Additional JSON fields packed into 'scores' for coach algorithm development:
+    //     sun_element, moon_element, sun_sign, moon_sign,
+    //     body_type_name, body_type_subtitle, profile_type,
+    //     moon_confidence, type_data { symptoms, cascade, detox, desc }
+    
+    const payload = {
+      client_name: data.name,
+      meeting_date: new Date().toISOString().split('T')[0],
+      
+      // Raw answers (question_id -> 0-3 score)
+      answers: data.answers || answers,
+      
+      // Comprehensive scores object for coach algorithm development
+      scores: {
+        // Final hybrid scores (primary display)
+        liver: data.finalScores.liver,
+        gut: data.finalScores.gut,
+        kidney: data.finalScores.kidney,
+        circ: data.finalScores.circ,
+        
+        // Innate risk scores (from birth-date chronotype engine)
+        innate_liver: data.innateScores.liver,
+        innate_gut: data.innateScores.gut,
+        innate_kidney: data.innateScores.kidney,
+        innate_circ: data.innateScores.circ,
+        
+        // Current symptom scores (from questionnaire only)
+        symptom_liver: data.catScores.liver,
+        symptom_gut: data.catScores.gut,
+        symptom_kidney: data.catScores.kidney,
+        symptom_circ: data.catScores.circ,
+        
+        // Hidden astrology data (for coach's algorithm development)
+        sun_element: data.sunElement,
+        moon_element: data.moonElement,
+        sun_sign: data.sunSign,
+        moon_sign: data.moonSign,
+        
+        // Birth date info
+        birth_date: `${data.year}-${String(data.month).padStart(2,'0')}-${String(data.day).padStart(2,'0')}`,
+        birth_time: document.getElementById('userBirthTime').value || null,
+        gender: document.getElementById('userGender').value || null,
+        
+        // Type classification
+        body_type_name: data.bodyType.name,
+        body_type_subtitle: data.bodyType.subtitle,
+        profile_type: data.profile.profileType,
+        primary_organ: data.profile.primaryOrgan[0],
+        secondary_organ: data.profile.secondaryOrgan[0],
+        
+        // Moon validation confidence
+        moon_confidence: data.moonValidation ? data.moonValidation.confidence : null,
+        
+        // Full type data for coach reference (from bio_profile_matrix.jsx)
+        type_data: {
+          symptoms: data.bodyType.symptoms,
+          cascade: data.bodyType.cascade,
+          detox: data.bodyType.detox,
+          desc: data.bodyType.desc,
+        },
+        
+        // Source marker
+        source: 'bio_profile_v1',
+      },
+    };
+    
+    const { error } = await db.from('diagnoses').insert(payload);
+    
+    if (error) throw error;
+    
+    banner.className = 'send-banner ok';
+    banner.textContent = '✓ 解析データをコーチに送信しました';
+    setTimeout(() => { banner.style.display = 'none'; }, 6000);
+    
+  } catch (e) {
+    console.error('Save error:', e);
+    banner.className = 'send-banner err';
+    banner.textContent = '⚠ 送信エラー。印刷してコーチへ直接お渡しください。';
+  }
+}
+
+// ==========================================================================
+// 10. BODY HEATMAP SVG
+// ==========================================================================
+
+function renderBodyHeatmap(scores) {
+  function getOpacity(val) { return Math.max(0.2, Math.min(0.85, val / 100)); }
+  function getColor(val) {
+    if (val >= 70) return '#e05040';
+    if (val >= 50) return '#d07830';
+    if (val >= 30) return '#d0a030';
+    return '#30b870';
+  }
+  function glowId(key) { return 'glow_' + key; }
+  
+  const organs = [
+    { key:'circ', cx:110, cy:118, rx:16, ry:14, label:'循環・神経', labelX:164, labelY:118, lineX:126, anchor:'start' },
+    { key:'liver', cx:80, cy:150, rx:24, ry:16, label:'肝臓', labelX:36, labelY:150, lineX:56, anchor:'end' },
+    { key:'kidney', cx:100, cy:172, rx:0, ry:0, label:'腎臓', labelX:164, labelY:172, lineX:136, anchor:'start', dual:true, cx1:76, cy1:172, cx2:124, cy2:172, r1x:13, r1y:10, r2x:13, r2y:10 },
+    { key:'gut', cx:100, cy:205, rx:28, ry:24, label:'腸', labelX:36, labelY:205, lineX:72, anchor:'end' },
+  ];
+
+  let defs = `<defs>`;
+  organs.forEach(o => {
+    const c = getColor(scores[o.key]);
+    defs += `<radialGradient id="${glowId(o.key)}"><stop offset="0%" stop-color="${c}" stop-opacity="${getOpacity(scores[o.key])}"/><stop offset="100%" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+  });
+  defs += `<filter id="bodyGlow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+
+  let organSvg = '';
+  organs.forEach(o => {
+    const val = scores[o.key];
+    const c = getColor(val);
+    const op = getOpacity(val);
+    if (o.dual) {
+      organSvg += `<ellipse cx="${o.cx1}" cy="${o.cy1}" rx="${o.r1x}" ry="${o.r1y}" fill="url(#${glowId(o.key)})" filter="url(#bodyGlow)"/>`;
+      organSvg += `<ellipse cx="${o.cx2}" cy="${o.cy2}" rx="${o.r2x}" ry="${o.r2y}" fill="url(#${glowId(o.key)})" filter="url(#bodyGlow)"/>`;
+    } else {
+      organSvg += `<ellipse cx="${o.cx}" cy="${o.cy}" rx="${o.rx}" ry="${o.ry}" fill="url(#${glowId(o.key)})" filter="url(#bodyGlow)"/>`;
+    }
+    // Leader line
+    const startX = o.anchor === 'start' ? o.lineX : o.lineX;
+    organSvg += `<line x1="${startX}" y1="${o.labelY}" x2="${o.labelX + (o.anchor === 'start' ? -2 : 2)}" y2="${o.labelY}" stroke="${c}" stroke-width="0.5" opacity="0.5" stroke-dasharray="2,2"/>`;
+    // Label
+    organSvg += `<text x="${o.labelX}" y="${o.labelY - 5}" text-anchor="${o.anchor}" fill="${c}" font-size="7.5" font-weight="700" opacity="0.9">${o.label}</text>`;
+    organSvg += `<text x="${o.labelX}" y="${o.labelY + 6}" text-anchor="${o.anchor}" fill="${c}" font-size="10" font-weight="700">${val}%</text>`;
+  });
+
+  // Spine / nerve line
+  const circC = getColor(scores.circ);
+  const circOp = getOpacity(scores.circ) * 0.3;
+  
+  return `<div class="body-map-wrap">
+    <div class="body-map-title">BODY RISK HEATMAP</div>
+    <svg viewBox="0 0 220 390" class="body-svg" style="max-width:260px;" xmlns="http://www.w3.org/2000/svg">
+      ${defs}
+      <!-- Body silhouette -->
+      <g fill="none" stroke="#1a2844" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="100" cy="38" rx="22" ry="26" fill="#0a1224"/>
+        <path d="M90 63 L90 76" fill="none"/>
+        <path d="M110 63 L110 76" fill="none"/>
+        <path d="M66 82 C56 100 54 130 54 160 L54 225 C54 242 68 252 85 258 L100 262 L115 258 C132 252 146 242 146 225 L146 160 C146 130 144 100 134 82 Z" fill="#0a1224"/>
+        <path d="M66 86 C48 96 36 120 28 155 C24 172 22 190 26 208" fill="none"/>
+        <path d="M134 86 C152 96 164 120 172 155 C176 172 178 190 174 208" fill="none"/>
+        <path d="M82 258 L78 310 C76 332 74 348 72 362" fill="none" stroke-width="1.5"/>
+        <path d="M118 258 L122 310 C124 332 126 348 128 362" fill="none" stroke-width="1.5"/>
+      </g>
+      <!-- Spine -->
+      <path d="M100 63 L100 260" stroke="${circC}" stroke-width="0.8" opacity="${circOp}" stroke-dasharray="4,3"/>
+      <!-- Vessel hints -->
+      <path d="M100 118 C80 130 70 150 75 175" stroke="${circC}" stroke-width="0.4" opacity="${circOp}" fill="none"/>
+      <path d="M100 118 C120 130 130 150 125 175" stroke="${circC}" stroke-width="0.4" opacity="${circOp}" fill="none"/>
+      <!-- Organs -->
+      ${organSvg}
+    </svg>
+    <div style="display:flex;justify-content:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      ${Object.entries(scores).sort((a,b) => b[1]-a[1]).map(([k,v]) => {
+        const labels = { liver:'肝臓', gut:'腸', kidney:'腎臓', circ:'循環・神経' };
+        const c = getColor(v);
+        return `<div style="font-size:9px;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 6px ${c}44;"></span><span style="color:${c};">${labels[k]}</span><span style="color:var(--text3);margin-left:2px;">${v}%</span></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ==========================================================================
+// 11.5 SEASONAL RISK CALENDAR
+// ==========================================================================
+
+function renderSeasonalRisk(sunEl, moonEl, scores) {
+  // Map seasons to elemental stress patterns
+  const seasons = [
+    { name:'春 (3-5月)', icon:'Q1', element:'fire', stress:'肝臓の解毒負荷が上昇しやすい季節。花粉やアレルギー反応が肝臓に追加負担。' },
+    { name:'夏 (6-8月)', icon:'Q2', element:'wind', stress:'暑熱により循環器系に負荷。発汗による水分・電解質バランスの乱れ。' },
+    { name:'秋 (9-11月)', icon:'Q3', element:'earth', stress:'消化器系のリズムが変動しやすい。食欲増進に伴う腸への負荷増大。' },
+    { name:'冬 (12-2月)', icon:'Q4', element:'water', stress:'冷えにより腎臓・水分代謝が低下。免疫力の低下と連動。' },
+  ];
+  
+  let html = `<div class="detail-card">
+    <div class="detail-tag">SEASONAL RISK FORECAST</div>
+    <div class="detail-title">季節別コンディション<span>予測カレンダー</span></div>
+    <div style="font-size:10.5px;color:var(--text2);margin-bottom:16px;line-height:1.8;">
+      あなたのクロノタイプに基づく、季節ごとの注意ポイント
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">`;
+  
+  for (const s of seasons) {
+    // Calculate seasonal vulnerability based on element overlap
+    let vulnerability = 30; // base
+    if (s.element === sunEl) vulnerability += 30; // same as sun = high daily load
+    if (s.element === moonEl) vulnerability += 25; // same as moon = stress trigger
+    const organKeys = { fire:'liver', earth:'gut', water:'kidney', wind:'circ' };
+    const key = organKeys[s.element];
+    vulnerability = Math.min(95, vulnerability + Math.floor(scores[key] * 0.2));
+    
+    const riskColor = vulnerability >= 70 ? 'var(--red)' : vulnerability >= 50 ? '#d07830' : vulnerability >= 35 ? 'var(--gut)' : 'var(--green)';
+    const riskLabel = vulnerability >= 70 ? '要注意' : vulnerability >= 50 ? '注意' : vulnerability >= 35 ? 'やや注意' : '安定';
+    
+    html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:12px;">${s.icon} <span style="font-size:11px;font-weight:600;color:var(--text);">${s.name}</span></div>
+        <span style="font-size:8px;padding:2px 6px;border-radius:2px;font-weight:700;color:${riskColor};background:${riskColor}15;border:1px solid ${riskColor}33;">${riskLabel}</span>
+      </div>
+      <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:6px;">
+        <div style="width:${vulnerability}%;height:100%;background:${riskColor};border-radius:2px;"></div>
+      </div>
+      <div style="font-size:9.5px;color:var(--text3);line-height:1.6;">${s.stress}</div>
+    </div>`;
+  }
+  
+  html += `</div></div>`;
+  return html;
+}
+
+// ==========================================================================
+// 12. CHARTS
+// ==========================================================================
+
+function renderRadarChart(scores) {
+  const ctx = document.getElementById('radarChart');
+  if (!ctx) return;
+  
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['肝臓（解毒・代謝）', '腸（消化・吸収）', '腎臓（濾過・水分）', '循環・神経系'],
+      datasets: [{
+        label: '総合リスクスコア',
+        data: [scores.liver, scores.gut, scores.kidney, scores.circ],
+        fill: true,
+        backgroundColor: 'rgba(13,47,80,0.10)',
+        borderColor: 'rgba(26,90,143,0.8)',
+        borderWidth: 2,
+        pointBackgroundColor: function(context) {
+          const val = context.raw;
+          if (val >= 70) return '#b02a24';
+          if (val >= 50) return '#d07830';
+          return '#1a5a8f';
+        },
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(13,47,80,0.08)' },
+          grid: { color: 'rgba(13,47,80,0.06)' },
+          ticks: { display: false, stepSize: 25 },
+          suggestedMin: 0,
+          suggestedMax: 100,
+          pointLabels: {
+            color: '#3d5468',
+            font: { size: 10, family: "'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif" },
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderBarChart(innate, current, final) {
+  const ctx = document.getElementById('barChart');
+  if (!ctx) return;
+  
+  const labels = ['肝臓', '腸', '腎臓', '循環・神経'];
+  const keys = ['liver', 'gut', 'kidney', 'circ'];
+  
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '先天的リスク',
+          data: keys.map(k => innate[k]),
+          backgroundColor: 'rgba(13,47,80,0.5)',
+          borderColor: 'rgba(13,47,80,0.9)',
+          borderWidth: 1,
+          borderRadius: 3,
+          barPercentage: 0.6,
+        },
+        {
+          label: '現状スコア',
+          data: keys.map(k => current[k]),
+          backgroundColor: 'rgba(143,168,196,0.5)',
+          borderColor: 'rgba(143,168,196,1)',
+          borderWidth: 1,
+          borderRadius: 3,
+          barPercentage: 0.6,
+        },
+        {
+          label: '統合スコア',
+          data: keys.map(k => final[k]),
+          backgroundColor: function(context) {
+            const val = context.raw;
+            if (val >= 70) return 'rgba(224,80,64,0.7)';
+            if (val >= 50) return 'rgba(208,120,48,0.7)';
+            return 'rgba(48,184,112,0.5)';
+          },
+          borderColor: function(context) {
+            const val = context.raw;
+            if (val >= 70) return '#e05040';
+            if (val >= 50) return '#d07830';
+            return '#30b870';
+          },
+          borderWidth: 1,
+          borderRadius: 3,
+          barPercentage: 0.6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: '#3d5468', font: { size: 10 }, usePointStyle: true, pointStyle: 'rect' }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(13,47,80,0.05)' },
+          ticks: { color: '#3d5468', font: { size: 10 } }
+        },
+        y: {
+          grid: { color: 'rgba(13,47,80,0.05)' },
+          ticks: { color: '#3d5468', font: { size: 9 }, stepSize: 25 },
+          suggestedMax: 100,
+        }
+      }
+    }
+  });
+}
+
+// ==========================================================================
+// 12. PERSONALIZED TIMELINE
+// ==========================================================================
+
+function renderTimeline(bodyType, sunEl, moonEl, scores) {
+  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  const topOrgan = sorted[0][0];
+  const secondOrgan = sorted[1][0];
+  
+  const organNames = { liver:'肝臓', gut:'腸', kidney:'腎臓', circ:'循環・神経系' };
+  
+  const steps = [
+    { time:'朝 7:00', title:'起床後の生体リズムリセット', desc:`常温の白湯で内臓を穏やかに覚醒させ、${organNames[topOrgan]}の代謝サイクルを初期化。` },
+    { time:'朝 8:00', title:'クロノタイプ適合の栄養補給', desc:'出生周期から算出されたあなたの代謝ピークに合わせた栄養素の摂取。緑の栄養素（クロロフィル・パラミロン等）で解毒サイクルをサポート。' },
+    { time:'昼 12:00', title:'代謝ピーク帯の食事', desc:'あなたの概日リズム上、最もエネルギー消費効率が高い時間帯。ここで最も重い食事を摂る。' },
+    { time:'夕 18:00', title:'消化器休息の準備', desc:'クロノニュートリション理論に基づき、この時間以降は消化負荷の軽い食事に切り替え。' },
+    { time:'夜 20:00', title:`${organNames[topOrgan]}の回復タイム開始`, desc:`ハーブティー（${topOrgan === 'liver' ? 'ダンデライオン・ミルクシスル系' : topOrgan === 'gut' ? 'カモミール・ペパーミント系' : topOrgan === 'kidney' ? 'ネトル・ジュニパー系' : 'パッションフラワー・リンデン系'}）で${organNames[topOrgan]}の修復サイクルをサポート。` },
+    { time:'夜 22:00', title:'副交感神経優位への移行', desc:'画面の光を避け、深呼吸法で自律神経を切り替え。この時間帯のリラクゼーションが翌日の臓器回復を決定づける。' },
+  ];
+  
+  let html = `<div class="timeline-card">
+    <div style="font-size:9px;color:var(--gold);letter-spacing:0.2em;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+      PERSONALIZED DAILY TIMELINE
+    </div>
+    <div style="font-size:10.5px;color:var(--text2);margin-bottom:16px;line-height:1.8;">
+      あなたのクロノタイプに最適化された1日のリズム設計
+    </div>`;
+  
+  for (const step of steps) {
+    html += `<div class="tl-item">
+      <div class="tl-time">${step.time}</div>
+      <div class="tl-content">
+        <div class="tl-title">${step.title}</div>
+        <div class="tl-desc">${step.desc}</div>
+      </div>
+    </div>`;
+  }
+  
+  html += `</div>`;
+  return html;
+}
+
+// ==========================================================================
+// 13. SCROLL PROGRESS BAR
+// ==========================================================================
+
+window.addEventListener('scroll', () => {
+  const scroll = window.scrollY;
+  const height = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = height > 0 ? (scroll / height) * 100 : 0;
+  document.getElementById('scrollProgress').style.width = pct + '%';
+});
+
+// ==========================================================================
+// 14. INIT
+// ==========================================================================
+
+// Quick demo fill for testing
+function demoFill() {
+  document.getElementById('userName').value = '田中 健太';
+  document.getElementById('userBirthDate').value = '1982-03-15';
+  
+  // Ensure questionnaire is rendered
+  if (shuffledQuestions.length === 0) renderQuestionnaire();
+  
+  // Fill random answers with realistic distribution
+  QUESTIONS.forEach(q => {
+    const val = Math.random() < 0.3 ? 0 : Math.random() < 0.5 ? 1 : Math.random() < 0.7 ? 2 : 3;
+    const row = document.getElementById(`qrow_${q.id}`);
+    if (row) {
+      const btn = row.querySelectorAll('.r-btn')[val];
+      if (btn) setAnswer(q.id, val, btn);
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderQuestionnaire();
+  // Set default date
+  const dateInput = document.getElementById('userBirthDate');
+  if (dateInput && !dateInput.value) {
+    dateInput.value = '1985-06-15';
+  }
+});
+
+</script>
+</body>
+</html>

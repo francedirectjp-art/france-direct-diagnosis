@@ -137,6 +137,9 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
 .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--gold); color: var(--dark); padding: 11px 22px; font-size: 12px; font-weight: 700; opacity: 0; transition: all 0.28s; pointer-events: none; z-index: 9999; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* Bio-Profile specific styles */
+.bio-source-tag { font-size: 8px; color: var(--gold); background: var(--gold-dim); padding: 1px 5px; margin-right: 4px; font-weight: 700; letter-spacing: 0.06em; display: inline-block; vertical-align: middle; }
+
 /* Print */
 @media print {
   body { background: #fff !important; color: #000 !important; }
@@ -180,7 +183,7 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
   <div class="container">
 
     <div class="stats-bar">
-      <div class="stat-card"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">総診断数</div></div>
+      <div class="stat-card"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">総解析数</div></div>
       <div class="stat-card"><div class="stat-val" id="statToday">—</div><div class="stat-lbl">本日</div></div>
       <div class="stat-card"><div class="stat-val" id="statWeek">—</div><div class="stat-lbl">今週</div></div>
       <div class="stat-card"><div class="stat-val" id="statAlert" style="color:var(--red)">—</div><div class="stat-lbl">要注意クライアント</div></div>
@@ -213,36 +216,89 @@ body { font-family: 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-
         </div>
       </div>
 
-      <div class="two-col">
-        <div class="panel-card">
-          <div class="panel-card-title">レーダーチャート</div>
-          <div class="chart-wrap"><canvas id="detailRadar"></canvas></div>
+      <!-- Bio-Profile Section (shown for bio_profile_v1 data) -->
+      <div id="bioProfileSection" style="display:none;">
+        
+        <!-- Chrono-Type & Classification -->
+        <div class="panel-card" style="margin-bottom:14px;">
+          <div class="panel-card-title">CHRONO-TYPE — 出生周期体質分類（bio_profile_matrix.jsx参照）</div>
+          <div id="dChronoType"></div>
         </div>
-        <div class="panel-card">
-          <div class="panel-card-title">軸別スコア</div>
-          <div class="d-score-grid" id="dScoreGrid"></div>
+
+        <div class="two-col">
+          <div class="panel-card">
+            <div class="panel-card-title">臓器別リスク レーダー</div>
+            <div class="chart-wrap"><canvas id="bioRadar"></canvas></div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-card-title">ハイブリッドスコア（先天×後天）</div>
+            <div class="d-score-grid" id="dBioScoreGrid"></div>
+          </div>
+        </div>
+
+        <!-- Innate vs Current comparison -->
+        <div class="panel-card" style="margin-bottom:14px;">
+          <div class="panel-card-title">先天的リスク × 現状症状 × 統合スコア比較</div>
+          <div style="max-width:500px;margin:0 auto;"><canvas id="bioBarChart"></canvas></div>
+        </div>
+
+        <!-- Hidden Engine Data (Coach-only) -->
+        <div class="panel-card" style="margin-bottom:14px;border-left:2px solid #5080c8;">
+          <div class="panel-card-title" style="color:#7898d8;">🔒 COACH ONLY — 隠しエンジンデータ（解析アルゴリズム開発用）</div>
+          <div id="dEngineData"></div>
+        </div>
+
+        <!-- Body Type Details -->
+        <div class="panel-card" style="margin-bottom:14px;">
+          <div class="panel-card-title">16TYPE MATRIX — 体質パターン詳細</div>
+          <div id="dBioTypeContent"></div>
+        </div>
+
+        <!-- Coach Algorithm Notes -->
+        <div class="panel-card" style="margin-bottom:14px;">
+          <div class="panel-card-title">COACH NOTE — 解析ガイド</div>
+          <div id="dBioCoachContent"></div>
+        </div>
+
+        <!-- Raw Answer Map -->
+        <div class="panel-card" style="margin-bottom:14px;">
+          <div class="panel-card-title">RAW DATA — 全40問回答データ</div>
+          <div id="dRawAnswers" style="max-height:400px;overflow-y:auto;"></div>
         </div>
       </div>
 
-      <!-- Body Type -->
-      <div class="panel-card" id="dTypeCard" style="margin-bottom:14px;">
-        <div class="panel-card-title">BODY TYPE — 体質パターン</div>
-        <div id="dTypeContent"></div>
-      </div>
+      <!-- Legacy Section (shown for old 8-axis data) -->
+      <div id="legacySection">
+        <div class="two-col">
+          <div class="panel-card">
+            <div class="panel-card-title">レーダーチャート</div>
+            <div class="chart-wrap"><canvas id="detailRadar"></canvas></div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-card-title">軸別スコア</div>
+            <div class="d-score-grid" id="dScoreGrid"></div>
+          </div>
+        </div>
 
-      <div class="alert-block" id="dAlertBlock" style="display:none;">
-        <div class="alert-block-title">HIGH ALERT — スコア4以上の項目</div>
-        <div id="dAlertList"></div>
-      </div>
+        <div class="panel-card" id="dTypeCard" style="margin-bottom:14px;">
+          <div class="panel-card-title">BODY TYPE — 体質パターン</div>
+          <div id="dTypeContent"></div>
+        </div>
 
-      <div class="panel-card" style="margin-bottom:14px;">
-        <div class="panel-card-title">COACH NOTE — 読み取りガイド</div>
-        <div id="dCoachContent"></div>
-      </div>
+        <div class="alert-block" id="dAlertBlock" style="display:none;">
+          <div class="alert-block-title">HIGH ALERT — スコア4以上の項目</div>
+          <div id="dAlertList"></div>
+        </div>
 
-      <div class="panel-card" id="dFocusPanel" style="display:none;">
-        <div class="panel-card-title">TODAY'S FOCUS</div>
-        <div id="dFocusTags"></div>
+        <div class="panel-card" style="margin-bottom:14px;">
+          <div class="panel-card-title">COACH NOTE — 解析ガイド</div>
+          <div id="dCoachContent"></div>
+        </div>
+
+        <div class="panel-card" id="dFocusPanel" style="display:none;">
+          <div class="panel-card-title">TODAY'S FOCUS</div>
+          <div id="dFocusTags"></div>
+        </div>
       </div>
 
     </div>
@@ -417,7 +473,12 @@ function updateStats() {
   const week  = allData.filter(d => new Date(d.created_at) >= weekAgo).length;
   const alert = allData.filter(d => {
     const scores = d.scores || {};
-    return Object.values(scores).some(s => s >= 4);
+    // Bio-profile: check if any organ final score >= 70
+    if (scores.source === 'bio_profile_v1') {
+      return (scores.liver >= 70 || scores.gut >= 70 || scores.kidney >= 70 || scores.circ >= 70);
+    }
+    // Legacy: check if any axis >= 4
+    return Object.values(scores).some(s => typeof s === 'number' && s >= 4);
   }).length;
 
   document.getElementById('statTotal').textContent = allData.length;
@@ -445,7 +506,13 @@ function filterList() {
   let items = [...allData];
   if (currentFilter === 'today') items = items.filter(d => d.created_at.startsWith(todayStr));
   if (currentFilter === 'week')  items = items.filter(d => new Date(d.created_at) >= weekAgo);
-  if (currentFilter === 'alert') items = items.filter(d => Object.values(d.scores||{}).some(s=>s>=4));
+  if (currentFilter === 'alert') items = items.filter(d => {
+    const scores = d.scores||{};
+    if (scores.source === 'bio_profile_v1') {
+      return (scores.liver >= 70 || scores.gut >= 70 || scores.kidney >= 70 || scores.circ >= 70);
+    }
+    return Object.values(scores).some(s=> typeof s === 'number' && s>=4);
+  });
   if (q) items = items.filter(d => (d.client_name||'').toLowerCase().includes(q));
 
   document.getElementById('listLabel').textContent = `クライアント一覧（${items.length}件）`;
@@ -460,16 +527,40 @@ function renderList(items) {
   }
   el.innerHTML = items.map(d => {
     const scores = d.scores || {};
+    const isBioProfile = scores.source === 'bio_profile_v1';
     const dateStr = d.meeting_date
       ? new Date(d.meeting_date+'T00:00:00').toLocaleDateString('ja-JP',{month:'short',day:'numeric'})
       : new Date(d.created_at).toLocaleDateString('ja-JP',{month:'short',day:'numeric'});
-    const badges = axes.map(ax => {
-      const s = scores[ax.key]||0, c = getColor(s);
-      return `<span class="axis-badge ${c.badge}">${ax.label} ${s.toFixed(1)}</span>`;
-    }).join('');
-    const hasAlert = Object.values(scores).some(s=>s>=4);
+    
+    let badges, hasAlert, typeTag;
+    
+    if (isBioProfile) {
+      // Bio-profile badges: show 4 organ scores
+      const bioOrgans = [
+        { key:'liver', label:'肝臓' },
+        { key:'gut', label:'腸' },
+        { key:'kidney', label:'腎臓' },
+        { key:'circ', label:'循環・神経' },
+      ];
+      badges = bioOrgans.map(o => {
+        const s = scores[o.key]||0;
+        const c = getBioColor(s);
+        return `<span class="axis-badge ${c.badge}">${o.label} ${s}%</span>`;
+      }).join('');
+      hasAlert = (scores.liver >= 70 || scores.gut >= 70 || scores.kidney >= 70 || scores.circ >= 70);
+      typeTag = `<span style="font-size:9px;color:var(--gold);background:var(--gold-dim);padding:2px 6px;margin-right:6px;">${scores.body_type_name||'Bio-Profile'}</span>`;
+    } else {
+      // Legacy 8-axis badges
+      badges = axes.map(ax => {
+        const s = scores[ax.key]||0, c = getColor(s);
+        return `<span class="axis-badge ${c.badge}">${ax.label} ${s.toFixed(1)}</span>`;
+      }).join('');
+      hasAlert = Object.values(scores).some(s=> typeof s === 'number' && s>=4);
+      typeTag = '';
+    }
+    
     return `<div class="client-row" onclick="showDetail('${d.id}')">
-      <div class="cr-name">${d.client_name||'名前なし'}</div>
+      <div class="cr-name">${typeTag}${d.client_name||'名前なし'}</div>
       <div class="cr-date">${dateStr}</div>
       <div class="cr-job">${d.client_job||''}</div>
       <div class="cr-badges">${badges}</div>
@@ -477,6 +568,14 @@ function renderList(items) {
       <div class="cr-arrow">›</div>
     </div>`;
   }).join('');
+}
+
+// Bio-profile color helper (0-100 scale)
+function getBioColor(s) {
+  if(s >= 70) return {cls:'c-red',   fill:'f-red',   label:'高リスク', badge:'badge-red'};
+  if(s >= 50) return {cls:'c-orange',fill:'f-orange',label:'注意',     badge:'badge-orange'};
+  if(s >= 30) return {cls:'c-yellow',fill:'f-yellow',label:'やや注意', badge:'badge-yellow'};
+  return             {cls:'c-green', fill:'f-green', label:'良好',     badge:'badge-green'};
 }
 
 // ===================================================
@@ -491,52 +590,61 @@ function showDetail(id) {
   if (row) row.classList.add('active');
 
   const scores  = d.scores  || {};
-  const answers = d.answers || {};
+  const rawAnswers = d.answers || {};
+  const isBioProfile = scores.source === 'bio_profile_v1';
 
   // Header
   document.getElementById('dName').textContent = (d.client_name||'名前なし') + ' 様';
-  const sub = [d.client_job, d.client_email].filter(Boolean).join('　|　');
-  document.getElementById('dSub').textContent = sub;
   const dateStr = d.meeting_date
     ? new Date(d.meeting_date+'T00:00:00').toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})
     : new Date(d.created_at).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('dDate').innerHTML = `France Direct　身体ポートフォリオ診断<br>${dateStr}`;
 
-  // Radar
-  buildDetailRadar(scores);
+  if (isBioProfile) {
+    // Bio-Profile detail view
+    document.getElementById('dSub').textContent = `生年月日: ${scores.birth_date || '不明'} ｜ 体質: ${scores.body_type_name || '不明'}`;
+    document.getElementById('dDate').innerHTML = `Bio-Profile体質解析<br>${dateStr}`;
+    
+    document.getElementById('bioProfileSection').style.display = 'block';
+    document.getElementById('legacySection').style.display = 'none';
+    
+    buildBioProfileDetail(scores, rawAnswers);
+    
+  } else {
+    // Legacy 8-axis detail view
+    const sub = [d.client_job, d.client_email].filter(Boolean).join('　|　');
+    document.getElementById('dSub').textContent = sub;
+    document.getElementById('dDate').innerHTML = `France Direct　身体ポートフォリオ解析<br>${dateStr}`;
+    
+    document.getElementById('bioProfileSection').style.display = 'none';
+    document.getElementById('legacySection').style.display = 'block';
+    
+    buildDetailRadar(scores);
+    document.getElementById('dScoreGrid').innerHTML = axes.map(ax=>{
+      const s=scores[ax.key]||0, c=getColor(s);
+      return `<div class="sc-card">
+        <div class="sc-top"><div class="sc-label">${ax.label}</div><div class="sc-val ${c.cls}">${s.toFixed(1)}</div></div>
+        <div class="sc-bar-bg"><div class="sc-bar-fill ${c.fill}" style="width:${(s/5)*100}%"></div></div>
+        <div class="sc-level ${c.cls}">${c.label}</div>
+      </div>`;
+    }).join('');
 
-  // Scores
-  document.getElementById('dScoreGrid').innerHTML = axes.map(ax=>{
-    const s=scores[ax.key]||0, c=getColor(s);
-    return `<div class="sc-card">
-      <div class="sc-top"><div class="sc-label">${ax.label}</div><div class="sc-val ${c.cls}">${s.toFixed(1)}</div></div>
-      <div class="sc-bar-bg"><div class="sc-bar-fill ${c.fill}" style="width:${(s/5)*100}%"></div></div>
-      <div class="sc-level ${c.cls}">${c.label}</div>
-    </div>`;
-  }).join('');
+    const highQ = questions.filter(q=>rawAnswers[q.id]>=4);
+    if (highQ.length) {
+      document.getElementById('dAlertBlock').style.display='block';
+      document.getElementById('dAlertList').innerHTML = highQ.map(q=>`
+        <div class="alert-item"><div class="alert-dot"></div>
+        <div><span style="color:var(--red);font-weight:700">Q${q.id}</span>（${rawAnswers[q.id]}点）${q.text}</div></div>`).join('');
+    } else document.getElementById('dAlertBlock').style.display='none';
 
-  // Alerts
-  const highQ = questions.filter(q=>answers[q.id]>=4);
-  if (highQ.length) {
-    document.getElementById('dAlertBlock').style.display='block';
-    document.getElementById('dAlertList').innerHTML = highQ.map(q=>`
-      <div class="alert-item"><div class="alert-dot"></div>
-      <div><span style="color:var(--red);font-weight:700">Q${q.id}</span>（${answers[q.id]}点）${q.text}</div></div>`).join('');
-  } else document.getElementById('dAlertBlock').style.display='none';
+    buildDetailBodyType(scores, document.getElementById('dTypeContent'));
+    buildDetailCoach(scores, document.getElementById('dCoachContent'));
 
-  // Body Type
-  buildDetailBodyType(scores, document.getElementById('dTypeContent'));
-
-  // Coach notes
-  buildDetailCoach(scores, document.getElementById('dCoachContent'));
-
-  // Focus
-  const focuses = d.focuses||[];
-  if (focuses.length) {
-    document.getElementById('dFocusPanel').style.display='block';
-    document.getElementById('dFocusTags').innerHTML = focuses.map(f=>`<span class="focus-tag">${f}</span>`).join('');
-  } else document.getElementById('dFocusPanel').style.display='none';
-
+    const focuses = d.focuses||[];
+    if (focuses.length) {
+      document.getElementById('dFocusPanel').style.display='block';
+      document.getElementById('dFocusTags').innerHTML = focuses.map(f=>`<span class="focus-tag">${f}</span>`).join('');
+    } else document.getElementById('dFocusPanel').style.display='none';
+  }
 
   document.getElementById('detailPanel').style.display='block';
   document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -546,6 +654,8 @@ function closeDetail() {
   document.getElementById('detailPanel').style.display='none';
   document.querySelectorAll('.client-row').forEach(r=>r.classList.remove('active'));
   if (detailChart) { detailChart.destroy(); detailChart=null; }
+  if (bioRadarChart) { bioRadarChart.destroy(); bioRadarChart=null; }
+  if (bioBarChartInst) { bioBarChartInst.destroy(); bioBarChartInst=null; }
 }
 
 // ===================================================
@@ -774,6 +884,434 @@ function buildDetailCoach(scores, container) {
     : `予防的メンテナンスの観点から、Artémisを試してみることを提案。「今がメンテナンスの最良タイミング」というフレームで。`;
   html += `<div class="coach-block"><div class="coach-block-lbl">次のアクション提案</div><div class="coach-block-text">${nextAction}</div></div>`;
 
+  container.innerHTML = html;
+}
+
+// ===================================================
+// BIO-PROFILE DETAIL BUILDER
+// ===================================================
+
+// Bio-profile 40 questions (from index.html, for coach raw data display)
+const bioQuestions = [
+  { id:1, cat:'gut', text:'食後に胃もたれや膨満感を感じることがある' },
+  { id:2, cat:'gut', text:'便秘、または下痢になりやすい' },
+  { id:3, cat:'gut', text:'お腹にガスが溜まりやすい' },
+  { id:4, cat:'gut', text:'特定の食べ物で体調が悪くなることがある' },
+  { id:5, cat:'gut', text:'食後に強い眠気に襲われる' },
+  { id:6, cat:'gut', text:'ストレスを感じると食欲が極端に変動する' },
+  { id:7, cat:'gut', text:'肌荒れやニキビができやすい（特に顎まわり）' },
+  { id:8, cat:'gut', text:'口臭や舌苔が気になる' },
+  { id:9, cat:'gut', text:'腹痛が精神的なストレスと連動しやすい' },
+  { id:10, cat:'gut', text:'乳製品や小麦製品を食べると調子が悪くなる' },
+  { id:11, cat:'liver', text:'十分に寝ても朝起きたとき疲れが残っている' },
+  { id:12, cat:'liver', text:'目が疲れやすい、または充血しやすい' },
+  { id:13, cat:'liver', text:'以前よりアルコールに弱くなった' },
+  { id:14, cat:'liver', text:'脂っこいものを食べると気持ち悪くなる' },
+  { id:15, cat:'liver', text:'肌のくすみや黄ぐすみが気になる' },
+  { id:16, cat:'liver', text:'怒りやイライラが急に爆発することがある' },
+  { id:17, cat:'liver', text:'右肋骨の下あたりに鈍い張りや重さを感じる' },
+  { id:18, cat:'liver', text:'甘いものやカフェインへの依存感がある' },
+  { id:19, cat:'liver', text:'右肩の凝りが慢性的にある' },
+  { id:20, cat:'liver', text:'解毒を意識した食事やファスティングを試したいと感じる' },
+  { id:21, cat:'kidney', text:'顔や脚がむくみやすい' },
+  { id:22, cat:'kidney', text:'冷え性で手足の末端が冷たい' },
+  { id:23, cat:'kidney', text:'夜間にトイレに起きることがある' },
+  { id:24, cat:'kidney', text:'腰が重い、または腰痛がある' },
+  { id:25, cat:'kidney', text:'雨の日や低気圧のとき体調が悪くなる' },
+  { id:26, cat:'kidney', text:'恐怖心や不安感が強い方だ' },
+  { id:27, cat:'kidney', text:'水分を取りすぎ、または取らなすぎの自覚がある' },
+  { id:28, cat:'kidney', text:'耳鳴りやめまいが起きることがある' },
+  { id:29, cat:'kidney', text:'感情を溜め込みやすく、その後体調が崩れる' },
+  { id:30, cat:'kidney', text:'体が全体的に重だるく感じることが多い' },
+  { id:31, cat:'circ', text:'手足の末端が冷える（特に冬以外でも）' },
+  { id:32, cat:'circ', text:'動悸や息切れを感じることがある' },
+  { id:33, cat:'circ', text:'肩こり・首こりが慢性的にある' },
+  { id:34, cat:'circ', text:'不眠、または睡眠の質が低い' },
+  { id:35, cat:'circ', text:'思考が止まらない、または頭が空転することがある' },
+  { id:36, cat:'circ', text:'頭痛（特に側頭部）が起きやすい' },
+  { id:37, cat:'circ', text:'立ちくらみやふらつきがある' },
+  { id:38, cat:'circ', text:'音や光、匂いに過敏になることがある' },
+  { id:39, cat:'circ', text:'血圧が高い、または低いと指摘されたことがある' },
+  { id:40, cat:'circ', text:'集中力が急激に低下する瞬間がある' },
+];
+
+const bioOrganMeta = {
+  liver:  { label:'肝臓', sub:'解毒・代謝', color:'#e05040', icon:'🧪' },
+  gut:    { label:'腸', sub:'消化・吸収', color:'#d0a030', icon:'🧬' },
+  kidney: { label:'腎臓', sub:'濾過・水分', color:'#3088d0', icon:'💧' },
+  circ:   { label:'循環・神経系', sub:'血管・自律神経', color:'#30b870', icon:'🩸' },
+};
+
+const chronoNames = {
+  fire: '高代謝活性型 (Fire)',
+  earth: '消化器優位型 (Earth)',
+  water: '水分代謝感受型 (Water)',
+  wind: '神経循環活性型 (Wind)',
+};
+
+const elementLabels = {
+  fire: '火（肝臓系）',
+  earth: '土（消化器系）',
+  water: '水（腎臓系）',
+  wind: '風（循環・神経系）',
+};
+
+let bioRadarChart = null;
+let bioBarChartInst = null;
+
+function buildBioProfileDetail(scores, rawAnswers) {
+  // Destroy previous charts
+  if (bioRadarChart) { bioRadarChart.destroy(); bioRadarChart = null; }
+  if (bioBarChartInst) { bioBarChartInst.destroy(); bioBarChartInst = null; }
+  
+  // 1. Chrono-Type section
+  const profileTypeText = {
+    critical: { title:'統合リスク集中型', desc:'先天的体質と現在の生活習慣の両方が同じ臓器に負荷。集中的介入を推奨。', color:'var(--red)' },
+    latent: { title:'潜在リスク型（隠れ時限爆弾）', desc:'先天的リスクが高いが現在は未顕在化。予防的ケアが極めて重要。', color:'var(--gold)' },
+    lifestyle: { title:'生活習慣ダメージ型', desc:'本来頑健だが現在のライフスタイルで負荷超過。修正で早期改善可能。', color:'var(--orange)' },
+    balanced: { title:'バランス維持型', desc:'大きなリスク集中なし。定期モニタリング推奨。', color:'var(--green)' },
+  };
+  
+  const pt = profileTypeText[scores.profile_type] || profileTypeText.balanced;
+  
+  document.getElementById('dChronoType').innerHTML = `
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:16px;font-weight:700;color:var(--gold);margin-bottom:6px;">${scores.body_type_name || '不明'}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">${scores.body_type_subtitle || ''}</div>
+        <div style="font-size:11px;color:${pt.color};font-weight:700;margin-bottom:4px;">${pt.title}</div>
+        <div style="font-size:10.5px;color:var(--text);line-height:1.8;">${pt.desc}</div>
+      </div>
+      <div style="flex:0 0 auto;min-width:180px;background:var(--dark);border:1px solid var(--border);padding:12px 16px;">
+        <div style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:0.1em;margin-bottom:8px;">ELEMENT MAP</div>
+        <div style="font-size:11px;color:var(--text);line-height:2;">
+          太陽エレメント: <strong style="color:var(--gold);">${elementLabels[scores.sun_element] || scores.sun_element}</strong><br>
+          月エレメント: <strong style="color:var(--gold);">${elementLabels[scores.moon_element] || scores.moon_element}</strong><br>
+          プロファイル: <strong style="color:${pt.color};">${scores.profile_type || '不明'}</strong><br>
+          主臓器: <strong>${bioOrganMeta[scores.primary_organ]?.label || scores.primary_organ}</strong><br>
+          副臓器: <strong>${bioOrganMeta[scores.secondary_organ]?.label || scores.secondary_organ}</strong>
+        </div>
+      </div>
+    </div>`;
+  
+  // 2. Score grid (hybrid scores with innate/symptom breakdown)
+  const organKeys = ['liver','gut','kidney','circ'];
+  document.getElementById('dBioScoreGrid').innerHTML = organKeys.map(key => {
+    const final = scores[key] || 0;
+    const innate = scores['innate_'+key] || 0;
+    const symptom = scores['symptom_'+key] || 0;
+    const c = getBioColor(final);
+    const meta = bioOrganMeta[key];
+    return `<div class="sc-card">
+      <div class="sc-top">
+        <div class="sc-label">${meta.icon} ${meta.label}</div>
+        <div class="sc-val ${c.cls}">${final}%</div>
+      </div>
+      <div class="sc-bar-bg"><div class="sc-bar-fill ${c.fill}" style="width:${final}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:4px;">
+        <span>先天: ${innate}%</span>
+        <span>現状: ${symptom}%</span>
+      </div>
+      <div class="sc-level ${c.cls}">${c.label}</div>
+    </div>`;
+  }).join('');
+  
+  // 3. Radar chart
+  const radarCanvas = document.getElementById('bioRadar');
+  if (radarCanvas) {
+    radarCanvas.parentNode.innerHTML = '<canvas id="bioRadar"></canvas>';
+    const ctx = document.getElementById('bioRadar');
+    bioRadarChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['肝臓（解毒）', '腸（消化）', '腎臓（水分）', '循環・神経'],
+        datasets: [{
+          label: '統合スコア',
+          data: organKeys.map(k => scores[k]||0),
+          backgroundColor: 'rgba(180,150,80,0.18)',
+          borderColor: '#b49650',
+          borderWidth: 2,
+          pointBackgroundColor: organKeys.map(k => {
+            const v = scores[k]||0;
+            return v >= 70 ? '#d04848' : v >= 50 ? '#d07830' : '#b49650';
+          }),
+          pointRadius: 5,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          r: {
+            min: 0, max: 100,
+            ticks: { stepSize: 25, color: 'rgba(180,150,80,0.5)', font: { size: 9 }, backdropColor: 'transparent' },
+            grid: { color: 'rgba(180,150,80,0.12)' },
+            angleLines: { color: 'rgba(180,150,80,0.15)' },
+            pointLabels: { color: '#dde2f0', font: { size: 10, weight: 'bold' } }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+  
+  // 4. Bar chart (innate vs current vs final)
+  const barCanvas = document.getElementById('bioBarChart');
+  if (barCanvas) {
+    barCanvas.parentNode.innerHTML = '<canvas id="bioBarChart"></canvas>';
+    const ctx2 = document.getElementById('bioBarChart');
+    bioBarChartInst = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: organKeys.map(k => bioOrganMeta[k].label),
+        datasets: [
+          {
+            label: '先天的リスク',
+            data: organKeys.map(k => scores['innate_'+k]||0),
+            backgroundColor: 'rgba(196,165,90,0.6)',
+            borderColor: 'rgba(196,165,90,1)',
+            borderWidth: 1, borderRadius: 3, barPercentage: 0.6,
+          },
+          {
+            label: '現状症状',
+            data: organKeys.map(k => scores['symptom_'+k]||0),
+            backgroundColor: 'rgba(128,144,184,0.5)',
+            borderColor: 'rgba(128,144,184,1)',
+            borderWidth: 1, borderRadius: 3, barPercentage: 0.6,
+          },
+          {
+            label: '統合スコア',
+            data: organKeys.map(k => scores[k]||0),
+            backgroundColor: organKeys.map(k => {
+              const v = scores[k]||0;
+              return v >= 70 ? 'rgba(208,72,72,0.7)' : v >= 50 ? 'rgba(208,120,48,0.7)' : 'rgba(64,184,104,0.5)';
+            }),
+            borderColor: organKeys.map(k => {
+              const v = scores[k]||0;
+              return v >= 70 ? '#d04848' : v >= 50 ? '#d07830' : '#40b868';
+            }),
+            borderWidth: 1, borderRadius: 3, barPercentage: 0.6,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#8090b8', font: { size: 10 }, usePointStyle: true, pointStyle: 'rect' } }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8090b8', font: { size: 10 } } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#506088', font: { size: 9 }, stepSize: 25 }, suggestedMax: 100 }
+        }
+      }
+    });
+  }
+  
+  // 5. Hidden engine data (coach-only section for algorithm development)
+  const confPct = scores.moon_confidence != null ? Math.round(scores.moon_confidence * 100) : '不明';
+  document.getElementById('dEngineData').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--dark);border:1px solid var(--border);padding:10px 12px;">
+        <div style="font-size:9px;color:#7898d8;font-weight:700;margin-bottom:6px;">太陽サイン（Sun Sign）</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">${scores.sun_sign || '不明'}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">エレメント: ${scores.sun_element || '不明'} → ${chronoNames[scores.sun_element] || '不明'}</div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);padding:10px 12px;">
+        <div style="font-size:9px;color:#7898d8;font-weight:700;margin-bottom:6px;">月サイン（Moon Sign）</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">${scores.moon_sign || '不明'}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">エレメント: ${scores.moon_element || '不明'} → ${chronoNames[scores.moon_element] || '不明'}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--dark);border:1px solid var(--border);padding:10px 12px;">
+        <div style="font-size:9px;color:#7898d8;font-weight:700;margin-bottom:4px;">生年月日</div>
+        <div style="font-size:12px;color:var(--text);">${scores.birth_date || '不明'}</div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);padding:10px 12px;">
+        <div style="font-size:9px;color:#7898d8;font-weight:700;margin-bottom:4px;">出生時間</div>
+        <div style="font-size:12px;color:var(--text);">${scores.birth_time || '不明（正午モデル）'}</div>
+      </div>
+      <div style="background:var(--dark);border:1px solid var(--border);padding:10px 12px;">
+        <div style="font-size:9px;color:#7898d8;font-weight:700;margin-bottom:4px;">月サイン信頼度</div>
+        <div style="font-size:12px;color:var(--text);">${confPct}%</div>
+      </div>
+    </div>
+    <div style="background:var(--dark);border:1px solid var(--border);padding:10px 12px;margin-bottom:10px;">
+      <div style="font-size:9px;color:#7898d8;font-weight:700;margin-bottom:6px;">ハイブリッドスコア算出式</div>
+      <div style="font-size:11px;color:var(--text);line-height:1.9;font-family:monospace;">
+        Final = 0.45 × 先天リスク + 0.45 × 現状症状 + 0.10 × 交差因子 × 10<br>
+        交差因子: 先天>50 && 現状>50 → +15 ｜ 先天>70 && 現状<30 → +8 (潜在リスク) ｜ 先天<30 && 現状>70 → +5 (生活習慣)
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);line-height:1.8;padding:8px 12px;background:rgba(80,120,200,0.04);border:1px solid rgba(80,120,200,0.15);">
+      💡 <strong>開発メモ:</strong> このデータは bio_profile_matrix.jsx の16タイプマトリクスに基づいています。
+      太陽エレメント×月エレメント=16パターン。エレメントコード: fire=1, earth=2, water=3, wind=4。
+      コーチが独自の解析アルゴリズムを構築する際は、innate_* と symptom_* の比率、
+      moon_confidence、profile_type を組み合わせてパターン分析を行ってください。
+    </div>`;
+  
+  // 6. Body type details
+  const typeData = scores.type_data || {};
+  const symptoms = typeData.symptoms || [];
+  document.getElementById('dBioTypeContent').innerHTML = `
+    <div class="coach-block">
+      <div class="coach-block-lbl" style="font-size:11px;color:var(--gold);font-weight:700;">${scores.body_type_name || '不明'}</div>
+      <div class="coach-block-text" style="margin-bottom:10px;">${typeData.desc || '詳細データなし'}</div>
+    </div>
+    ${symptoms.length ? `
+    <div style="margin-bottom:12px;">
+      <div style="font-size:9px;color:var(--gold);font-weight:700;letter-spacing:0.1em;margin-bottom:8px;">特徴的な症状パターン</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${symptoms.map(s => `<span style="font-size:10px;padding:3px 10px;border-radius:14px;background:var(--dark);border:1px solid var(--border);color:var(--text-muted);">${s}</span>`).join('')}
+      </div>
+    </div>` : ''}
+    ${typeData.cascade ? `
+    <div style="background:rgba(208,72,72,0.05);border:1px solid rgba(208,72,72,0.2);border-left:2px solid var(--red);padding:10px 13px;margin-bottom:10px;">
+      <div style="font-size:9px;color:var(--red);font-weight:700;margin-bottom:5px;">⚠ 崩壊カスケード</div>
+      <div style="font-size:11px;color:#c0a0a0;line-height:1.85;">${typeData.cascade}</div>
+    </div>` : ''}
+    ${typeData.detox ? `
+    <div style="background:rgba(48,184,112,0.05);border:1px solid rgba(48,184,112,0.2);border-left:2px solid var(--green);padding:10px 13px;">
+      <div style="font-size:9px;color:var(--green);font-weight:700;margin-bottom:5px;">✦ 推奨デトックス戦略</div>
+      <div style="font-size:11px;color:var(--text);line-height:1.85;">${typeData.detox}</div>
+    </div>` : ''}`;
+  
+  // 7. Coach notes for bio-profile
+  buildBioCoachNotes(scores);
+  
+  // 8. Raw answers
+  buildRawAnswerView(rawAnswers);
+}
+
+function buildBioCoachNotes(scores) {
+  const container = document.getElementById('dBioCoachContent');
+  const organKeys = ['liver','gut','kidney','circ'];
+  
+  // Sort organs by final score
+  const sorted = organKeys.map(k => ({
+    key: k,
+    label: bioOrganMeta[k].label,
+    final: scores[k]||0,
+    innate: scores['innate_'+k]||0,
+    symptom: scores['symptom_'+k]||0,
+  })).sort((a,b) => b.final - a.final);
+  
+  const top = sorted[0];
+  const profileType = scores.profile_type || 'balanced';
+  
+  // Summary
+  let summary;
+  if (profileType === 'critical') {
+    summary = `⚠ 最優先対応が必要。${top.label}に先天的リスクと現在症状の両方が集中しています（先天${top.innate}% / 現状${top.symptom}% → 統合${top.final}%）。放置すると急速に悪化する可能性が高いです。`;
+  } else if (profileType === 'latent') {
+    summary = `⏰ 潜在リスク検出。先天的に${top.label}への負荷が高い体質ですが、現在は症状として表面化していません。「今のうちに」という予防的アプローチが最も効果的なタイミングです。`;
+  } else if (profileType === 'lifestyle') {
+    summary = `🔄 生活習慣による負荷。本来の体質では${top.label}は頑健ですが、現在のライフスタイルが許容量を超えています。生活改善による早期回復が見込めます。`;
+  } else {
+    summary = `✓ 現時点で重大なリスク集中はありません。定期的なモニタリングで変化を追跡することを推奨します。`;
+  }
+  
+  let html = `<div class="coach-block"><div class="coach-block-lbl">総評</div><div class="coach-block-text">${summary}</div></div>`;
+  
+  // Per-organ analysis
+  sorted.forEach(organ => {
+    if (organ.final < 30) return; // Skip low-risk organs
+    
+    const gap = organ.innate - organ.symptom;
+    let interpretation;
+    if (organ.innate > 50 && organ.symptom > 50) {
+      interpretation = `先天・後天とも高負荷。最も介入が必要な臓器です。先天的な体質傾向がライフスタイルで増幅されている状態。`;
+    } else if (organ.innate > 50 && organ.symptom <= 30) {
+      interpretation = `潜在リスク注意。先天的にはリスクが高い体質ですが、現在は顕在化していません。しかし環境変化やストレスで一気に表面化するリスクがあります。`;
+    } else if (organ.innate <= 30 && organ.symptom > 50) {
+      interpretation = `生活習慣由来。本来はリスクが低い臓器ですが、現在のライフスタイルが過負荷をかけています。改善余地が大きいです。`;
+    } else {
+      interpretation = `中程度のリスク。先天${organ.innate}%、現状${organ.symptom}%のバランスを注視してください。`;
+    }
+    
+    html += `<div class="coach-block">
+      <div class="coach-block-lbl">${organ.label}（統合${organ.final}% ← 先天${organ.innate}% / 現状${organ.symptom}%）</div>
+      <div class="coach-block-text">${interpretation}</div>
+    </div>`;
+  });
+  
+  // Conversation starters based on top organ
+  const organTips = {
+    liver: [
+      '「最近、以前よりアルコールに弱くなったと感じませんか？」',
+      '「朝の倦怠感が取れにくくなっていませんか？」',
+      '「右肋骨の下あたりに重さや張りを感じることはありますか？」',
+    ],
+    gut: [
+      '「食後に強い眠気を感じることが増えていませんか？」',
+      '「お腹の張りやガスが気になることはありますか？」',
+      '「便通のリズムが以前と変わったと感じますか？」',
+    ],
+    kidney: [
+      '「朝起きた時、顔や脚のむくみを感じることがありますか？」',
+      '「腰の重さや冷えが慢性的に続いていませんか？」',
+      '「雨の日や低気圧で体調が落ちることがありますか？」',
+    ],
+    circ: [
+      '「手足の冷えが、冬以外でも気になることがありますか？」',
+      '「突然の動悸や息切れを感じることはありますか？」',
+      '「寝つきが悪い、または夜中に目が覚めることがありますか？」',
+    ],
+  };
+  
+  if (top.final >= 30 && bioOrganMeta[top.key]) {
+    html += `<div class="coach-tip-block">
+      <div class="coach-tip-lbl">効果的な切り口（${bioOrganMeta[top.key].label}が主訴のクライアント向け）</div>
+      <ul class="coach-tip-list">
+        ${(organTips[top.key]||[]).map(t => `<li>${t}</li>`).join('')}
+      </ul>
+    </div>`;
+  }
+  
+  // Artemis proposal timing
+  const artemisGuide = {
+    liver: 'Artémisのマリアアザミ・タンポポ根が肝臓サポートに有効。「まず解毒フィルターを修復してから、次の段階へ」というフレームが刺さりやすい。',
+    gut: 'ハーブファスティングによる腸リセットが最優先。「腸を整えると脳のクリア感が戻る」という体感変化を伝える。',
+    kidney: '腎サポートハーブ（ハトムギ・イラクサ）。「根本的な回復力を取り戻す」「水の巡りを正常化する」という表現が響く。',
+    circ: '循環・神経系を鎮めるハーブ（パッションフラワー・リンデン）。「自律神経のバランスを戻す」という説明が有効。',
+  };
+  
+  html += `<div class="coach-artemis-block">
+    <div class="coach-artemis-lbl">Artémis 提案タイミング</div>
+    <div class="coach-artemis-text">${artemisGuide[top.key] || '臓器の状況に応じて最適な提案を判断してください。'}</div>
+  </div>`;
+  
+  container.innerHTML = html;
+}
+
+function buildRawAnswerView(rawAnswers) {
+  const container = document.getElementById('dRawAnswers');
+  if (!rawAnswers || !Object.keys(rawAnswers).length) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">回答データなし</div>';
+    return;
+  }
+  
+  const cats = { gut:'腸・消化器系', liver:'肝臓・解毒系', kidney:'腎臓・水分代謝系', circ:'循環・神経系' };
+  const catColors = { gut:'#d0a030', liver:'#e05040', kidney:'#3088d0', circ:'#30b870' };
+  const scoreLabels = ['全くない', 'たまに', 'よくある', '常にある'];
+  const scoreColors = ['var(--green)', 'var(--text-muted)', 'var(--orange)', 'var(--red)'];
+  
+  let html = '';
+  for (const [catKey, catLabel] of Object.entries(cats)) {
+    const catQs = bioQuestions.filter(q => q.cat === catKey);
+    html += `<div style="margin-bottom:12px;">
+      <div style="font-size:9px;font-weight:700;color:${catColors[catKey]};letter-spacing:0.1em;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">${catLabel}</div>`;
+    catQs.forEach(q => {
+      const val = rawAnswers[q.id];
+      const hasAnswer = val !== undefined && val !== null;
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+        <span style="font-size:9px;color:var(--gold);font-weight:700;min-width:24px;text-align:right;">Q${q.id}</span>
+        <span style="flex:1;font-size:10.5px;color:var(--text);line-height:1.5;">${q.text}</span>
+        <span style="font-size:11px;font-weight:700;min-width:20px;text-align:center;color:${hasAnswer ? scoreColors[val] : 'var(--text-muted)'};">${hasAnswer ? val : '—'}</span>
+        <span style="font-size:9px;min-width:50px;color:${hasAnswer ? scoreColors[val] : 'var(--text-muted)'};">${hasAnswer ? scoreLabels[val] : '未回答'}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
   container.innerHTML = html;
 }
 
